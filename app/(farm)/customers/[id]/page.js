@@ -21,7 +21,7 @@ export default async function CustomerPage({ params }) {
         <Line label="فلوس عند الناس" value={formatMoney(person.remaining)} />
       </Section>
       {Number(person.remaining) > 0 ? (
-        <PaySheet title="تسجيل دفعة" submitLabel="تسجيل الدفعة" direction="in" personId={id} redirectTo={`/customers/${id}`} defaultDate={cairoToday()} />
+        <PaySheet title="تسجيل دفعة" submitLabel="تسجيل الدفعة" direction="in" personId={id} defaultDate={cairoToday()} />
       ) : null}
       <Section title="المبيعات">
         {person.sales.map((sale) => (

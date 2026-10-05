@@ -1,1 +1,1 @@
-export { default } from "../../../log/page";
+export { default } from "../../log/page";

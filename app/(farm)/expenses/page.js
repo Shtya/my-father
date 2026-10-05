@@ -1,17 +1,52 @@
-import { ButtonLink, Empty, Line, Page, Section } from "@/components/ui";
-import { listExpenses } from "@/lib/farm";
+import { ExpensesBoard } from "@/components/expenses-board";
+import { Page } from "@/components/ui";
+import { getActiveCycle, listCategories, listExpenses, listSuppliers } from "@/lib/farm";
 import { formatDate, formatMoney } from "@/lib/format";
 
+function day(value) {
+  if (!value) return "";
+  const match = String(value).match(/\d{4}-\d{2}-\d{2}/);
+  if (match) return match[0];
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    const month = String(value.getMonth() + 1).padStart(2, "0");
+    const date = String(value.getDate()).padStart(2, "0");
+    return `${value.getFullYear()}-${month}-${date}`;
+  }
+  return "";
+}
+
 export default async function ExpensesPage() {
-  const rows = await listExpenses();
+  const [rows, categories, suppliers, cycle] = await Promise.all([
+    listExpenses(),
+    listCategories(),
+    listSuppliers(),
+    getActiveCycle(),
+  ]);
   const total = rows.reduce((sum, row) => sum + Number(row.amount), 0);
   return (
-    <Page title="المصاريف" action={<ButtonLink href="/expenses/new">إضافة مصروف</ButtonLink>}>
-      <Section title="آخر المصاريف" aside={<span className="num font-semibold">{formatMoney(total)}</span>}>
-        {rows.length ? rows.map((row) => (
-          <Line key={row.id} label={row.category_name} value={formatMoney(row.amount)} hint={`${formatDate(row.expense_date)}${row.supplier_name ? ` · ${row.supplier_name}` : ""}`} />
-        )) : <Empty title="ما فيش مصاريف مسجلة" body="ابدأ بتسجيل أول مصروف." href="/expenses/new" action="إضافة مصروف" />}
-      </Section>
+    <Page title="المصاريف" action={<span className="num font-semibold">{formatMoney(total)}</span>}>
+      <ExpensesBoard
+        cycleId={cycle?.cycle.id || ""}
+        categories={categories.map((item) => ({ id: item.id, name_ar: item.name_ar }))}
+        suppliers={suppliers.map((item) => ({ id: item.id, name: item.name }))}
+        rows={rows.map((row) => ({
+          id: row.id,
+          categoryId: row.category_id,
+          categoryName: row.category_name,
+          amount: row.amount,
+          amountLabel: formatMoney(row.amount),
+          expenseDate: day(row.expense_date),
+          dateLabel: formatDate(row.expense_date),
+          supplierId: row.supplier_id || "",
+          supplierName: row.supplier_name || "",
+          paymentMethod: row.payment_method,
+          paidAmount: row.paid_amount,
+          quantity: row.quantity ?? "",
+          unit: row.unit || "",
+          unitPrice: row.unit_price ?? "",
+          notes: row.notes || "",
+        }))}
+      />
     </Page>
   );
 }

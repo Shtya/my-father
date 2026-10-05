@@ -59,7 +59,7 @@ export function BookmarkButton({ slug, initial }) {
   );
 }
 
-export function PaySheet({ title, submitLabel, direction, personId, redirectTo, defaultDate }) {
+export function PaySheet({ title, submitLabel, direction, personId, defaultDate }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -68,7 +68,7 @@ export function PaySheet({ title, submitLabel, direction, personId, redirectTo, 
       </button>
       {open ? (
         <Sheet title={title} onClose={() => setOpen(false)}>
-          <Form endpoint="/api/payments" redirectTo={redirectTo} submitLabel={submitLabel}>
+          <Form endpoint="/api/payments" onDone={() => setOpen(false)} submitLabel={submitLabel}>
             <input type="hidden" name="direction" value={direction} />
             <input type="hidden" name={direction === "in" ? "customerId" : "supplierId"} value={personId} />
             <Field label="المبلغ" name="amount" type="number" required step="0.01" min="0" />

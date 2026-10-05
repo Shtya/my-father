@@ -1,38 +1,36 @@
 import { MarketSourceSelect } from "@/components/market-source";
 import { Line, Page, Section } from "@/components/ui";
 import { marketOverview } from "@/lib/farm";
-import { changeLabel, formatDate, formatMoney } from "@/lib/format";
+import { formatDate, formatMoney } from "@/lib/format";
+
+const CORE = new Set(["broiler_kg", "chick", "feed", "corn", "soy", "bran", "clover"]);
 
 export default async function MarketPage({ searchParams }) {
   const params = await searchParams;
   const market = await marketOverview(params.source);
-  const poultry = market.items.filter((item) => item.category === "poultry");
-  const feed = market.items.filter((item) => item.category === "feed");
+  const visible = market.items.filter((item) => CORE.has(item.id) || item.latest);
+  const poultry = visible.filter((item) => item.category === "poultry");
+  const feed = visible.filter((item) => item.category === "feed");
   return (
     <Page title="السوق">
       <MarketSourceSelect sources={market.sources} active={market.activeSource} />
       <p className="text-xs text-muted">{market.statusLine} اللي مش موجود في البورصة دي بيظهر من البورصة التانية.</p>
       <Section title="الدواجن">{poultry.map((item) => <PriceItem key={item.id} item={item} />)}</Section>
       <Section title="الأعلاف">{feed.map((item) => <PriceItem key={item.id} item={item} />)}</Section>
-      <Section title="اتجاه الأسعار">
-        {market.items.filter((item) => item.latest).map((item) => {
-          const week = changeLabel(item.weekChange);
-          const month = changeLabel(item.monthChange);
-          return (
-            <Line key={item.id} label={item.label} value={week ? `${week.word} ${week.text}` : "لسه مقارنة"} hint={month ? `خلال شهر: ${month.word} ${month.text}` : "محتاج سعر أقدم عشان المقارنة"} />
-          );
-        })}
-        {!market.items.some((item) => item.latest) ? <p className="px-3 py-3 text-sm">لسه الأسعار مجاتش من البورصة.</p> : null}
-      </Section>
     </Page>
   );
 }
 
 function PriceItem({ item }) {
   const latest = item.latest;
-  if (!latest) return <Line label={item.label} value="—" hint="غير معلن دلوقتي" />;
+  if (!latest) {
+    const hint = item.id === "feed" ? "المصانع مش معلنة سعر الطن دلوقتي" : "غير معلن دلوقتي";
+    return <Line label={item.label} value="—" hint={hint} />;
+  }
   if (item.filledFromName) return <Line label={item.label} value={formatMoney(latest.price)} hint={`من بورصة ${item.filledFromName}، لأن البورصة المختارة مش معلنها`} />;
-  const detail = item.id === "soy" && latest.buy_price ? `صويا 44% ${formatMoney(latest.buy_price)} · ${latest.unit}` : latest.unit;
+  let detail = latest.unit;
+  if (item.id === "soy" && latest.buy_price) detail = `صويا 44% ${formatMoney(latest.buy_price)} · ${latest.unit}`;
+  if (item.id === "corn" && latest.buy_price && latest.sell_price) detail = `من ${formatMoney(latest.buy_price)} إلى ${formatMoney(latest.sell_price)} للطن`;
   return (
     <>
       <Line label={item.label} value={formatMoney(latest.price)} hint={`${detail} · ${formatDate(latest.price_date)}`} />

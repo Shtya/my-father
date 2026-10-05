@@ -21,7 +21,7 @@ export default async function SupplierPage({ params }) {
         <Line label="الباقي علينا" value={formatMoney(person.remaining)} />
       </Section>
       {Number(person.remaining) > 0 ? (
-        <PaySheet title="تسجيل السداد" submitLabel="تسجيل السداد" direction="out" personId={id} redirectTo={`/suppliers/${id}`} defaultDate={cairoToday()} />
+        <PaySheet title="تسجيل السداد" submitLabel="تسجيل السداد" direction="out" personId={id} defaultDate={cairoToday()} />
       ) : null}
       <Section title="المشتريات">
         {person.expenses.map((row) => (

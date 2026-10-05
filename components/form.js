@@ -53,7 +53,7 @@ export function Sheet({ title, eyebrow, children, onClose }) {
   );
 }
 
-export function Form({ endpoint, method = "POST", redirectTo, children, submitLabel }) {
+export function Form({ endpoint, method = "POST", redirectTo, onDone, children, submitLabel }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -80,7 +80,16 @@ export function Form({ endpoint, method = "POST", redirectTo, children, submitLa
       if (!response.ok) throw new Error(payload.error || "حصل خطأ");
       if (payload.vetNotice) setNotice("لو الأعراض شديدة، كلم الطبيب البيطري. التسجيل هنا للمتابعة فقط.");
       form.reset();
-      if (redirectTo) {
+      if (onDone) {
+        onDone();
+        router.refresh();
+        return;
+      }
+      if (redirectTo && form.closest(".sheet-panel")) {
+        if (window.history.length > 1) router.back();
+        else router.push(redirectTo);
+        router.refresh();
+      } else if (redirectTo) {
         router.push(redirectTo);
         router.refresh();
       } else {

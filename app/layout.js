@@ -8,6 +8,8 @@ const cairo = Cairo({
   variable: "--font-cairo",
 });
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "فراخ البيت",
   description: "متابعة الفراخ والمصاريف والبيع في البيت",
