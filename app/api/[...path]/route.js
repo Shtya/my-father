@@ -105,6 +105,8 @@ async function dispatch(request, context, method) {
     const message = status === 500 ? "حصل خطأ. حاول مرة تانية." : error.message;
     if (error.code === "23503") return json({ error: "البيانات المرتبطة غير موجودة. راجع الاختيار." }, 400);
     if (error.code === "22P02") return json({ error: "في رقم أو تاريخ غير مفهوم." }, 400);
+    if (error.code === "23514") return json({ error: "في رقم مش منطقي، زي مدفوع أكبر من الإجمالي. راجع الأرقام." }, 400);
+    if (error.code === "23505") return json({ error: "الحاجة دي متسجلة قبل كده." }, 409);
     return json({ error: message }, status);
   }
 }

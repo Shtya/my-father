@@ -5,7 +5,7 @@ export default function NewSupplierPage() {
     <Sheet title="مورد جديد">
       <Form endpoint="/api/suppliers" redirectTo="/suppliers" submitLabel="حفظ">
         <Field label="الاسم" name="name" required />
-        <Field label="التليفون" name="phone" />
+        <Field label="التليفون" name="phone" type="tel" />
         <Field label="بيبيع إيه" name="products" />
         <Field label="ملاحظات" name="notes" />
       </Form>

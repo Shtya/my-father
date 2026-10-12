@@ -13,7 +13,14 @@
   --clay-soft: #f6e8e3;
   --amber: #8a5a16;
   --amber-soft: #f8f0df;
-  color-scheme: light;
+  color-scheme: only light;
+}
+
+html {
+  color-scheme: only light;
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 @theme inline {
@@ -40,12 +47,22 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-cairo), "Segoe UI", Tahoma, sans-serif;
-  font-size: 15px;
-  line-height: 1.45;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-tap-highlight-color: rgb(36 57 44 / 0.12);
 }
 
 button, input, select, textarea { font: inherit; }
-input, select, textarea { color: var(--ink); background-color: #fff; }
+input, select, textarea {
+  color: var(--ink);
+  background-color: #fff;
+  font-size: 16px;
+  color-scheme: only light;
+}
+input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
+button:disabled { cursor: not-allowed; }
+input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.8; width: 22px; height: 22px; cursor: pointer; }
+::selection { background: var(--soft); color: var(--ink); }
 
 select {
   appearance: none;
@@ -79,8 +96,52 @@ a, button, select {
 }
 
 :focus-visible {
-  outline: 2px solid var(--green);
+  outline: 3px solid var(--green);
   outline-offset: 2px;
+}
+
+details > summary {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  font-size: 1rem;
+}
+
+.toast-dock {
+  position: fixed;
+  inset-inline: 0.75rem;
+  bottom: calc(6.5rem + env(safe-area-inset-bottom));
+  z-index: 60;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.toast {
+  max-width: 32rem;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgb(28 36 28 / 0.22);
+  animation: toast-in 0.22s ease;
+}
+
+@keyframes toast-in {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+.table-scroll {
+  background:
+    linear-gradient(to left, var(--paper) 30%, transparent) left center / 24px 100% no-repeat local,
+    linear-gradient(to left, rgb(28 36 28 / 0.12), transparent) left center / 10px 100% no-repeat scroll;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .num { font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
@@ -93,7 +154,7 @@ a, button, select {
 .field > input,
 .field > select {
   width: 100%;
-  height: 48px;
+  height: 52px;
   border: 1px solid var(--line);
   background-color: #fff;
   padding: 14px 12px 0;
@@ -117,8 +178,8 @@ a, button, select {
   max-width: calc(100% - 24px);
   overflow: hidden;
   color: var(--muted);
-  font-size: 15px;
-  line-height: 1;
+  font-size: 16px;
+  line-height: 1.2;
   white-space: nowrap;
   text-overflow: ellipsis;
   pointer-events: none;
@@ -132,8 +193,8 @@ a, button, select {
   padding: 0 6px;
   background: #fff;
   color: var(--green);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .field:focus-within > input,
@@ -183,8 +244,8 @@ a, button, select {
 
 .sheet-head h2 {
   margin: 0;
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-size: 1.25rem;
+  font-weight: 700;
 }
 
 @keyframes sheet-fade {

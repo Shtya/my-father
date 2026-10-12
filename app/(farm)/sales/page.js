@@ -1,5 +1,5 @@
 import { SalesBoard } from "@/components/sales-board";
-import { Page } from "@/components/ui";
+import { MORE, Page, Total } from "@/components/ui";
 import { getActiveCycle, listCustomers, listSales } from "@/lib/farm";
 import { formatDate, formatMoney, formatNumber } from "@/lib/format";
 
@@ -18,7 +18,7 @@ function day(value) {
 export default async function SalesPage() {
   const [rows, customers, cycle] = await Promise.all([listSales(), listCustomers(), getActiveCycle()]);
   return (
-    <Page title="المبيعات">
+    <Page back={MORE} title="المبيعات" action={<Total label="إجمالي المبيعات" value={formatMoney(rows.reduce((sum, row) => sum + Number(row.total_amount), 0))} />}>
       <SalesBoard
         cycleId={cycle?.cycle.id || ""}
         customers={customers.map((item) => ({ id: item.id, name: item.name }))}

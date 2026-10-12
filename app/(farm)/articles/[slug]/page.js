@@ -15,7 +15,7 @@ export default async function ArticlePage({ params }) {
   }
   await markRead(slug);
   return (
-    <Page eyebrow={article.category_name} title={article.title} action={<BookmarkButton slug={slug} initial={article.bookmarked} />}>
+    <Page back={{ href: "/articles", label: "المقالات" }} eyebrow={article.category_name} title={article.title} action={<BookmarkButton slug={slug} initial={article.bookmarked} />}>
       <p className="text-muted">{article.summary}</p>
       <article className="whitespace-pre-wrap bg-paper px-4 py-4 leading-8">{article.content}</article>
       <p className="text-sm text-muted">المصدر: {article.source_name || "ملخص تعليمي"}{article.source_url ? ` · ${article.source_url}` : ""}</p>

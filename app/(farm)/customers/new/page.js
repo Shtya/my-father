@@ -5,7 +5,7 @@ export default function NewCustomerPage() {
     <Sheet title="عميل جديد">
       <Form endpoint="/api/customers" redirectTo="/customers" submitLabel="حفظ">
         <Field label="الاسم" name="name" required />
-        <Field label="التليفون" name="phone" />
+        <Field label="التليفون" name="phone" type="tel" />
         <Field label="ملاحظات" name="notes" />
       </Form>
     </Sheet>

@@ -75,7 +75,7 @@ export function Shell({ farmName, unread, children }) {
             const Icon = item.icon;
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
-              <Link key={item.href} href={item.href} className={`flex h-11 items-center gap-3 px-3 ${active ? "bg-white/15" : "hover:bg-white/10"}`}>
+              <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={`flex h-12 items-center gap-3 px-3 text-base ${active ? "bg-white/15 font-bold" : "hover:bg-white/10"}`}>
                 <Icon size={18} />
                 <span>{item.label}</span>
               </Link>
@@ -88,11 +88,11 @@ export function Shell({ farmName, unread, children }) {
       </div>
       <nav className="bottom-nav fixed inset-x-3 z-30 flex items-end justify-between rounded-2xl border border-line bg-paper px-1.5 py-1.5 shadow-[0_10px_30px_rgb(28_36_28/0.14)] md:hidden">
         {tabs.slice(0, 2).map((item) => <Tab key={item.href} item={item} pathname={pathname} />)}
-        <button type="button" className="flex w-14 shrink-0 flex-col items-center" onClick={() => setOpen(true)}>
-          <span className="-mt-5 flex h-11 w-11 items-center justify-center rounded-full bg-green shadow-[0_6px_16px_rgb(36_57_44/0.28)]">
-            <Plus size={20} />
+        <button type="button" aria-label="تسجيل جديد: مصروف أو بيع أو نفوق" className="flex w-16 shrink-0 flex-col items-center" onClick={() => setOpen(true)}>
+          <span className="-mt-6 flex h-13 w-13 items-center justify-center rounded-full bg-green shadow-[0_6px_16px_rgb(36_57_44/0.28)]">
+            <Plus size={24} aria-hidden="true" />
           </span>
-          <span className="mt-0.5 text-[11px] font-semibold text-green">تسجيل</span>
+          <span className="mt-0.5 text-[13px] font-bold text-green">تسجيل</span>
         </button>
         {tabs.slice(2).map((item) => <Tab key={item.href} item={item} pathname={pathname} badge={item.href === "/more" ? unread : 0} />)}
       </nav>
@@ -103,8 +103,8 @@ export function Shell({ farmName, unread, children }) {
             {actions.map((item) => {
               const Icon = item.icon;
               return (
-                <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className="flex h-11 items-center gap-2 border border-line px-3 text-sm font-semibold">
-                  <Icon size={18} />
+                <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className="flex min-h-14 items-center gap-2 border border-line bg-white px-3 py-2 text-base font-semibold active:bg-soft">
+                  <Icon size={22} className="shrink-0 text-green" aria-hidden="true" />
                   {item.label}
                 </Link>
               );
@@ -129,10 +129,10 @@ function Tab({ item, pathname, badge = 0 }) {
   const Icon = item.icon;
   const active = tabActive(item.href, pathname);
   return (
-    <Link href={item.href} className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 ${active ? "bg-green text-white" : "text-muted"}`}>
-      <Icon size={18} />
-      <span className="text-[11px] font-semibold">{item.label}</span>
-      {badge > 0 ? <span className="absolute top-1 left-1/2 h-1.5 w-1.5 translate-x-2 rounded-full bg-clay" /> : null}
+    <Link href={item.href} aria-current={active ? "page" : undefined} className={`relative flex min-h-13 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 ${active ? "bg-green text-white" : "text-ink"}`}>
+      <Icon size={22} aria-hidden="true" />
+      <span className="text-[13px] font-bold">{item.label}</span>
+      {badge > 0 ? <span className="absolute top-1 left-1/2 h-2.5 w-2.5 translate-x-2 rounded-full bg-clay" aria-label="فيه تنبيهات جديدة" /> : null}
     </Link>
   );
 }

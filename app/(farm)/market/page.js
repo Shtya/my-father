@@ -14,7 +14,7 @@ export default async function MarketPage({ searchParams }) {
   return (
     <Page title="السوق">
       <MarketSourceSelect sources={market.sources} active={market.activeSource} />
-      <p className="text-xs text-muted">{market.statusLine} اللي مش موجود في البورصة دي بيظهر من البورصة التانية.</p>
+      <p className="text-sm text-muted">{market.statusLine} اللي مش موجود في البورصة دي بيظهر من البورصة التانية.</p>
       <Section title="الدواجن">{poultry.map((item) => <PriceItem key={item.id} item={item} />)}</Section>
       <Section title="الأعلاف">{feed.map((item) => <PriceItem key={item.id} item={item} />)}</Section>
     </Page>

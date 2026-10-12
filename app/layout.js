@@ -1,5 +1,6 @@
 import { Cairo } from "next/font/google";
 import { Pwa } from "@/components/pwa";
+import { Toaster } from "@/components/toast";
 import "./globals.css";
 
 const cairo = Cairo({
@@ -34,14 +35,16 @@ export const viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: "#24392c",
+  colorScheme: "only light",
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ar" dir="rtl" className={`${cairo.variable} h-full`}>
-      <body className="min-h-full">
+    <html lang="ar" dir="rtl" className={`${cairo.variable} h-full`} style={{ colorScheme: "only light" }}>
+      <body className="min-h-full bg-bg text-ink">
         <Pwa />
         {children}
+        <Toaster />
       </body>
     </html>
   );

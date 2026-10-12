@@ -6,9 +6,9 @@ export function MarketSourceSelect({ sources, active }) {
   const router = useRouter();
   return (
     <label className="block">
-      <span className="mb-1 block text-xs text-muted">البورصة</span>
+      <span className="mb-1 block text-sm font-semibold text-muted">الأسعار من بورصة</span>
       <select
-        className="h-11 w-full border border-line bg-white px-3 focus-visible:border-green"
+        className="h-12 w-full border border-line bg-white px-3 text-base focus-visible:border-green"
         value={active}
         aria-label="البورصة"
         onChange={(event) => {

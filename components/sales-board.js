@@ -12,11 +12,13 @@ export function SalesBoard({ rows, customers, cycleId }) {
     <>
       <DataTable
         columns={["العميل", "الإجمالي", "التاريخ", "العدد", "المتبقي"]}
-        empty="ما فيش مبيعات."
+        empty="لسه ما فيش بيع. دوس «تسجيل بيع» تحت لما تبيع فراخ."
         addLabel="تسجيل بيع"
+        note={rows.length >= 200 ? "ظاهر آخر 200 بيع. للأقدم استخدم التقارير." : ""}
         onAdd={() => actions.open({ type: "add" })}
         rows={rows.map((row) => ({
           id: row.id,
+          name: row.customerName || "بيع نقدي",
           cells: [row.customerName || "بيع نقدي", row.totalLabel, row.dateLabel, row.birdsLabel, row.remainingLabel],
           onEdit: () => actions.open({ type: "edit", row }),
           onDelete: () => actions.open({ type: "delete", row }),
@@ -30,6 +32,7 @@ export function SalesBoard({ rows, customers, cycleId }) {
               method={record ? "PATCH" : "POST"}
               onDone={actions.close}
               submitLabel={record ? "حفظ التعديل" : "حفظ البيع"}
+              successMessage={record ? "التعديل اتحفظ." : "البيع اتسجل."}
             >
               {!record ? <input type="hidden" name="cycleId" value={cycleId} /> : null}
               <Select label="العميل" name="customerId" defaultValue={record?.customerId || ""}>
@@ -50,11 +53,11 @@ export function SalesBoard({ rows, customers, cycleId }) {
       {actions.sheet?.type === "delete" ? (
         <DeleteSheet
           title="حذف بيع"
-          body="تحذف البيع؟ العدد هيرجع للفراخ الموجودة."
+          body={`تحذف بيع ${record.birdsLabel} فرخة بـ ${record.totalLabel} يوم ${record.dateLabel}؟ العدد هيرجع للفراخ الموجودة، والدفعات المسجلة على البيع ده هتتحذف معاه.`}
           error={actions.error}
           pending={actions.pending}
           onClose={actions.close}
-          onConfirm={() => actions.remove(`/api/sales/${record.id}`)}
+          onConfirm={() => actions.remove(`/api/sales/${record.id}`, "البيع اتحذف.")}
         />
       ) : null}
     </>

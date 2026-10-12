@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ButtonLink, Line, Page, Section } from "@/components/ui";
+import { ButtonLink, Line, Page, Section, WeightLine } from "@/components/ui";
 import { dashboard } from "@/lib/farm";
 import { changeLabel, formatDate, formatMoney, formatNumber } from "@/lib/format";
 
@@ -8,13 +8,13 @@ export default async function HomePage() {
   const cycle = data.cycle;
   return (
     <Page eyebrow={formatDate(data.today)} title={data.headline}>
-      <Section title="الحالة الآن" aside={cycle ? <Link href={`/cycle/${cycle.cycle.id}`} className="text-sm font-semibold">تفاصيل</Link> : null}>
+      <Section title="الحالة الآن" aside={cycle ? <Link href={`/cycle/${cycle.cycle.id}`} className="-my-2 flex min-h-11 items-center px-2 text-base font-semibold text-green underline underline-offset-4">تفاصيل الدورة</Link> : null}>
         {cycle ? (
           <>
             <Line label="الدورة الحالية" value={cycle.cycle.name} />
             <Line label="العمر" value={`${formatNumber(cycle.ageDays)} يوم`} />
             <Line label="عدد الفراخ" value={formatNumber(cycle.current)} />
-            <Line label="متوسط الوزن" value={cycle.avgWeight ? `${formatNumber(cycle.avgWeight, 2)} كجم` : "لسه"} />
+            <WeightLine stats={cycle} active={cycle.cycle.status === "active"} empty="لسه" />
             <Line label="النفوق" value={`${formatNumber(cycle.mortality)} · ${formatNumber(cycle.mortalityPercent, 1)}%`} />
           </>
         ) : (
@@ -33,13 +33,13 @@ export default async function HomePage() {
         <Line label="صافي النتيجة الحالية" value={formatMoney(cycle?.result || 0)} hint={cycle?.costPerKg ? `تكلفة الكيلو تقريبًا ${formatMoney(cycle.costPerKg)}` : "سجّل الوزن عشان نحسب تكلفة الكيلو"} />
       </Section>
 
-      <Section title="السوق" aside={<Link href="/market" className="text-sm font-semibold">كل الأسعار</Link>}>
+      <Section title="السوق" aside={<Link href="/market" className="-my-2 flex min-h-11 items-center px-2 text-base font-semibold text-green underline underline-offset-4">كل الأسعار</Link>}>
         <PriceRow label="سعر الكيلو" item={data.market.items.find((item) => item.id === "broiler_kg")} />
         <PriceRow label="سعر الكتكوت" item={data.market.items.find((item) => item.id === "chick")} />
         <PriceRow label="سعر العلف" item={data.market.items.find((item) => item.id === "feed")} />
         <PriceRow label="سعر الذرة" item={data.market.items.find((item) => item.id === "corn")} />
         <PriceRow label="سعر الصويا" item={data.market.items.find((item) => item.id === "soy")} />
-        <p className="px-3 py-2 text-xs text-muted">{data.market.statusLine}</p>
+        <p className="px-3 py-2 text-sm text-muted">{data.market.statusLine}</p>
       </Section>
 
       <Section title="أهم حاجة">
@@ -54,11 +54,11 @@ export default async function HomePage() {
       </Section>
 
       <section className="bg-green px-3 py-3 text-white">
-        <p className="text-xs text-white/75">ملخص اليوم</p>
+        <p className="text-sm text-white/80">ملخص اليوم</p>
         <ul className="mt-2 space-y-1 text-sm">
           <li className="flex justify-between gap-3"><span>عدد الفراخ</span><span>{formatNumber(cycle?.current || 0)}</span></li>
           <li className="flex justify-between gap-3"><span>النفوق النهارده</span><span>{formatNumber(data.todayMortality)}</span></li>
-          <li className="flex justify-between gap-3"><span>متوسط الوزن</span><span>{cycle?.avgWeight ? `${formatNumber(cycle.avgWeight, 2)} كجم` : "غير مسجل"}</span></li>
+          <li className="flex justify-between gap-3"><span>متوسط الوزن</span><span>{cycle?.weightSuspect ? "راجع الوزن" : cycle?.avgWeight ? `${formatNumber(cycle.avgWeight, 2)} كجم` : "غير مسجل"}</span></li>
           <li className="flex justify-between gap-3"><span>مصاريف النهارده</span><span>{formatMoney(data.todayExpense)}</span></li>
           <li className="flex justify-between gap-3"><span>سعر البيع</span><span>{data.sellPrice ? formatMoney(data.sellPrice.sell_price || data.sellPrice.price) : "غير معلن"}</span></li>
           <li className="flex justify-between gap-3"><span>سعر العلف</span><span>{data.feedPrice ? formatMoney(data.feedPrice.price) : "غير معلن"}</span></li>

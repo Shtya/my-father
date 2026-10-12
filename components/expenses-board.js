@@ -12,11 +12,13 @@ export function ExpensesBoard({ rows, categories, suppliers, cycleId }) {
     <>
       <DataTable
         columns={["النوع", "المبلغ", "التاريخ", "المورد"]}
-        empty="ما فيش مصاريف مسجلة."
+        empty="لسه ما فيش مصاريف. دوس «إضافة مصروف» تحت عشان تسجّل أول مصروف."
         addLabel="إضافة مصروف"
+        note={rows.length >= 200 ? "ظاهر آخر 200 مصروف. للأقدم استخدم التقارير." : ""}
         onAdd={() => actions.open({ type: "add" })}
         rows={rows.map((row) => ({
           id: row.id,
+          name: row.categoryName,
           cells: [row.categoryName, row.amountLabel, row.dateLabel, row.supplierName || "—"],
           onEdit: () => actions.open({ type: "edit", row }),
           onDelete: () => actions.open({ type: "delete", row }),
@@ -36,11 +38,11 @@ export function ExpensesBoard({ rows, categories, suppliers, cycleId }) {
       {actions.sheet?.type === "delete" ? (
         <DeleteSheet
           title="حذف مصروف"
-          body={`تحذف مصروف ${record.categoryName}؟`}
+          body={`تحذف مصروف ${record.categoryName} بـ ${record.amountLabel} يوم ${record.dateLabel}؟ لو كان شراء دخل المخزون، الكمية هتتشال من المخزون.`}
           error={actions.error}
           pending={actions.pending}
           onClose={actions.close}
-          onConfirm={() => actions.remove(`/api/expenses/${record.id}`)}
+          onConfirm={() => actions.remove(`/api/expenses/${record.id}`, "المصروف اتحذف.")}
         />
       ) : null}
     </>
@@ -54,6 +56,7 @@ function ExpenseForm({ row, categories, suppliers, cycleId, onDone }) {
       method={row ? "PATCH" : "POST"}
       onDone={onDone}
       submitLabel={row ? "حفظ التعديل" : "حفظ المصروف"}
+      successMessage={row ? "التعديل اتحفظ." : "المصروف اتسجل."}
     >
       <Select label="نوع المصروف" name="categoryId" required defaultValue={row?.categoryId || "feed"}>
         {categories.map((item) => <option key={item.id} value={item.id}>{item.name_ar}</option>)}

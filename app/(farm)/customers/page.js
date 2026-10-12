@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PeopleBoard } from "@/components/people-board";
-import { Page } from "@/components/ui";
+import { MORE, Page, Total } from "@/components/ui";
 import { listCustomers } from "@/lib/farm";
 import { formatMoney } from "@/lib/format";
 
@@ -8,7 +8,7 @@ export default async function CustomersPage() {
   const rows = await listCustomers();
   const total = rows.reduce((sum, row) => sum + Number(row.remaining), 0);
   return (
-    <Page title="العملاء" action={<span className="num font-semibold">{formatMoney(total)}</span>}>
+    <Page back={MORE} title="العملاء" action={<Total label="فلوس عند الناس" value={formatMoney(total)} />}>
       <PeopleBoard
         kind="customer"
         rows={rows.map((row) => ({

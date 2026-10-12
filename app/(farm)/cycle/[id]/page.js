@@ -1,9 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { decision, getCycleStats, listDailyLogs } from "@/lib/farm";
 import { formatDate, formatMoney, formatNumber, changeLabel } from "@/lib/format";
-import { Line, Page, Section } from "@/components/ui";
-import { CloseCycle } from "@/components/actions";
+import { ButtonLink, Line, Page, Section, WeightLine } from "@/components/ui";
+import { CloseCycle, EditCycle } from "@/components/actions";
 
 export default async function CycleDetailPage({ params }) {
   const { id } = await params;
@@ -14,17 +13,23 @@ export default async function CycleDetailPage({ params }) {
     if (error.status === 404) notFound();
     throw error;
   }
-  const logs = await listDailyLogs(id);
-  const estimate = await decision(id, 7);
+  const [logs, estimate] = await Promise.all([listDailyLogs(id), decision(id, 7)]);
   const trend = changeLabel(estimate.weekChange);
+  const active = stats.cycle.status === "active";
+  const cycle = stats.cycle;
   return (
-    <Page eyebrow={stats.cycle.status === "active" ? "دورة شغالة" : "دورة مقفولة"} title={stats.cycle.name} action={<Link href="/log" className="font-semibold">متابعة</Link>}>
+    <Page
+      back={{ href: "/cycle", label: "الدورة" }}
+      eyebrow={active ? "دورة شغالة" : "دورة مقفولة"}
+      title={cycle.name}
+      action={active ? <ButtonLink href="/log">تسجيل متابعة النهارده</ButtonLink> : null}
+    >
       <Section title="الفراخ">
         <Line label="البداية" value={formatNumber(stats.cycle.initial_quantity)} hint={formatDate(stats.cycle.start_date)} />
         <Line label="الموجود" value={formatNumber(stats.current)} />
         <Line label="النفوق" value={`${formatNumber(stats.mortality)} · ${formatNumber(stats.mortalityPercent, 1)}%`} />
         <Line label="العمر" value={`${formatNumber(stats.ageDays)} يوم`} />
-        <Line label="متوسط الوزن" value={stats.avgWeight ? `${formatNumber(stats.avgWeight, 2)} كجم` : "—"} />
+        <WeightLine stats={stats} active={active} />
         <Line label="علف مستهلك" value={formatNumber(stats.feedConsumed, 1)} />
       </Section>
       <Section title="الحساب">
@@ -48,10 +53,20 @@ export default async function CycleDetailPage({ params }) {
       </Section>
       <Section title="آخر المتابعة">
         {logs.length ? logs.slice(0, 7).map((log) => (
-          <Line key={log.id} label={formatDate(log.log_date)} value={log.mortality ? `نفوق ${formatNumber(log.mortality)}` : "من غير نفوق"} hint={log.average_weight_kg ? `وزن ${formatNumber(log.average_weight_kg, 2)} كجم` : log.notes || ""} />
+          <Line key={log.id} href={active ? `/log?date=${String(log.log_date).slice(0, 10)}` : undefined} label={formatDate(log.log_date)} value={log.mortality ? `نفوق ${formatNumber(log.mortality)}` : "من غير نفوق"} hint={log.average_weight_kg ? `وزن ${formatNumber(log.average_weight_kg, 2)} كجم` : log.notes || ""} />
         )) : <p className="px-3 py-3 text-sm">لسه ما فيش متابعة.</p>}
       </Section>
-      {stats.cycle.status === "active" ? <CloseCycle id={id} /> : null}
+      <EditCycle cycle={{
+        id: cycle.id,
+        name: cycle.name,
+        poultry_type: cycle.poultry_type,
+        breed: cycle.breed,
+        expected_sell_date: cycle.expected_sell_date,
+        target_weight_kg: cycle.target_weight_kg,
+        location: cycle.location,
+        notes: cycle.notes,
+      }} />
+      {active ? <CloseCycle id={id} /> : null}
     </Page>
   );
 }

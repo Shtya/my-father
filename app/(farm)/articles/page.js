@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { ArticlePrefetch } from "@/components/article-prefetch";
 import { ArticleThumb } from "@/components/article-thumb";
 import { Field } from "@/components/form";
-import { Page } from "@/components/ui";
+import { MORE, Page } from "@/components/ui";
 import { articleImage, liveArticles } from "@/lib/articles-live";
 import { formatDate } from "@/lib/format";
 
@@ -19,7 +19,7 @@ export default async function ArticlesPage({ searchParams }) {
   const q = params.q || "";
   const page = Number(params.page) || 1;
   return (
-    <Page title="مقالات الدواجن">
+    <Page back={MORE} title="مقالات الدواجن">
       <form className="flex items-start gap-2" method="get">
         <div className="min-w-0 flex-1">
           <Field label="ابحث في المقالات" name="q" defaultValue={q} />
@@ -28,7 +28,7 @@ export default async function ArticlesPage({ searchParams }) {
       </form>
       <div className="flex gap-2 overflow-x-auto">
         {topics.map(([id, label]) => (
-          <Link key={label} href={id ? `/articles?q=${id}` : "/articles"} className={`shrink-0 border border-line px-3 py-1.5 text-sm ${(!id && !q) || q === id ? "bg-green" : "bg-paper"}`}>{label}</Link>
+          <Link key={label} href={id ? `/articles?q=${id}` : "/articles"} className={`flex h-11 shrink-0 items-center border border-line px-4 text-base ${(!id && !q) || q === id ? "bg-green" : "bg-paper"}`}>{label}</Link>
         ))}
       </div>
       <Suspense fallback={<ArticleSkeleton />}>
@@ -50,7 +50,7 @@ async function ArticleList({ query, page }) {
   return (
     <>
       <ArticlePrefetch query={query} page={result.page} pages={result.pages} />
-      <p className="text-xs text-muted">
+      <p className="text-sm text-muted">
         {error ? "" : `صفحة ${result.page} من ${result.pages} · ${result.total} مقال. بتتحدث كل دقيقتين من أجرى توداي ودواجن مصر.`}
       </p>
       {error ? <p className="bg-clay-soft px-3 py-3 text-clay">{error}</p> : null}
@@ -59,8 +59,8 @@ async function ArticleList({ query, page }) {
           <Link key={article.key} href={`/articles/post/${article.key}`} className="flex items-start gap-3 border-b border-line px-3 py-3 last:border-b-0">
             <ArticleThumb src={article.image ? articleImage(article.image) : ""} />
             <span className="min-w-0">
-              <span className="block text-sm font-semibold leading-snug">{article.title}</span>
-              <span className="mt-1 block text-xs text-muted">{article.source} · {formatDate(article.date)}</span>
+              <span className="block text-base font-semibold leading-snug">{article.title}</span>
+              <span className="mt-1 block text-sm text-muted">{article.source} · {formatDate(article.date)}</span>
             </span>
           </Link>
         ))}

@@ -23,7 +23,7 @@ export default async function CyclesPage() {
 
 function CycleBlock({ row }) {
   return (
-    <Section title={row.cycle.name} aside={<Link href={`/cycle/${row.cycle.id}`} className="text-sm font-semibold">فتح</Link>}>
+    <Section title={row.cycle.name} aside={<Link href={`/cycle/${row.cycle.id}`} className="-my-2 flex min-h-11 items-center px-2 text-base font-semibold text-green underline underline-offset-4">فتح الدورة</Link>}>
       <Line label="البداية" value={`${formatNumber(row.cycle.initial_quantity)} كتكوت`} hint={formatDate(row.cycle.start_date)} />
       <Line label="الحالي" value={formatNumber(row.current)} />
       <Line label="النفوق" value={formatNumber(row.mortality)} />

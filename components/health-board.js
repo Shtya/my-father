@@ -19,11 +19,12 @@ export function HealthBoard({ rows, cycleId }) {
     <>
       <DataTable
         columns={["الاسم", "النوع", "التاريخ", "التكلفة"]}
-        empty="ما فيش سجل صحة."
-        addLabel="تسجيل"
+        empty="لسه ما فيش سجل صحة. دوس «تسجيل دواء أو عرض» تحت."
+        addLabel="تسجيل دواء أو عرض"
         onAdd={() => actions.open({ type: "add" })}
         rows={rows.map((row) => ({
           id: row.id,
+          name: row.title,
           cells: [row.title, row.typeLabel, row.dateLabel, row.costLabel],
           onEdit: () => actions.open({ type: "edit", row }),
           onDelete: () => actions.open({ type: "delete", row }),
@@ -36,7 +37,8 @@ export function HealthBoard({ rows, cycleId }) {
             endpoint={record ? `/api/health/${record.id}` : "/api/health"}
             method={record ? "PATCH" : "POST"}
             onDone={actions.close}
-            submitLabel="حفظ"
+            submitLabel={record ? "حفظ التعديل" : "حفظ السجل"}
+            successMessage={record ? "التعديل اتحفظ." : "السجل اتحفظ."}
           >
             {!record ? <input type="hidden" name="cycleId" value={cycleId || ""} /> : null}
             <Select label="النوع" name="recordType" defaultValue={record?.recordType || "medicine"}>
@@ -59,7 +61,7 @@ export function HealthBoard({ rows, cycleId }) {
           error={actions.error}
           pending={actions.pending}
           onClose={actions.close}
-          onConfirm={() => actions.remove(`/api/health/${record.id}`)}
+          onConfirm={() => actions.remove(`/api/health/${record.id}`, "السجل اتحذف.")}
         />
       ) : null}
     </>

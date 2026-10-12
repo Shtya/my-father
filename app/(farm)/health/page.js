@@ -1,5 +1,5 @@
 import { HealthBoard } from "@/components/health-board";
-import { Page } from "@/components/ui";
+import { MORE, Page } from "@/components/ui";
 import { getActiveCycle, listHealth } from "@/lib/farm";
 import { formatDate, formatMoney } from "@/lib/format";
 
@@ -20,7 +20,7 @@ function day(value) {
 export default async function HealthPage() {
   const [rows, cycle] = await Promise.all([listHealth(null), getActiveCycle()]);
   return (
-    <Page title="صحة الفراخ">
+    <Page back={MORE} title="صحة الفراخ">
       <p className="bg-amber-soft px-4 py-3 text-amber">التسجيل هنا للمتابعة فقط، ومش تشخيص. لو الأعراض شديدة كلم الطبيب البيطري.</p>
       <HealthBoard
         cycleId={cycle?.cycle.id || ""}

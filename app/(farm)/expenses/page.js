@@ -1,5 +1,5 @@
 import { ExpensesBoard } from "@/components/expenses-board";
-import { Page } from "@/components/ui";
+import { MORE, Page, Total } from "@/components/ui";
 import { getActiveCycle, listCategories, listExpenses, listSuppliers } from "@/lib/farm";
 import { formatDate, formatMoney } from "@/lib/format";
 
@@ -24,7 +24,7 @@ export default async function ExpensesPage() {
   ]);
   const total = rows.reduce((sum, row) => sum + Number(row.amount), 0);
   return (
-    <Page title="المصاريف" action={<span className="num font-semibold">{formatMoney(total)}</span>}>
+    <Page back={MORE} title="المصاريف" action={<Total label="إجمالي المصاريف" value={formatMoney(total)} />}>
       <ExpensesBoard
         cycleId={cycle?.cycle.id || ""}
         categories={categories.map((item) => ({ id: item.id, name_ar: item.name_ar }))}
