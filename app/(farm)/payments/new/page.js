@@ -8,7 +8,14 @@ export default async function NewPaymentPage({ searchParams }) {
   const [customers, suppliers] = await Promise.all([listCustomers(), listSuppliers()]);
   return (
     <Sheet title={direction === "out" ? "سداد لمورد" : "تسجيل دفعة"}>
-      <Form endpoint="/api/payments" redirectTo={direction === "out" ? "/suppliers" : "/customers"} submitLabel="حفظ الدفعة">
+      <Form
+        endpoint="/api/payments"
+        redirectTo={direction === "out" ? "/suppliers" : "/customers"}
+        submitLabel="حفظ الدفعة"
+        successMessage="الدفعة اتسجلت."
+        label="الدفعة"
+        optimistic="payment"
+      >
         <input type="hidden" name="direction" value={direction} />
         {direction === "in" ? (
           <Select label="العميل" name="customerId" required defaultValue={customers[0]?.id || ""}>

@@ -1,4 +1,4 @@
-const SHELL = "poultry-shell-v2";
+const SHELL = "poultry-shell-v3";
 
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
@@ -16,19 +16,48 @@ self.addEventListener("activate", (event) => {
   })());
 });
 
+function offline() {
+  return new Response("<!doctype html><html lang=\"ar\" dir=\"rtl\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><body style=\"font-family:sans-serif;padding:2rem;font-size:18px\"><p>النت مش شغال دلوقتي. أول ما يرجع افتح الصفحة تاني.</p></body></html>", {
+    status: 503,
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
+}
+
+// Live data (API, server-component refreshes) always goes to the network untouched:
+// a cached copy would show old numbers as if they were current.
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
-  if (new URL(request.url).origin !== self.location.origin) return;
-  event.respondWith(
-    fetch(request)
-      .then((response) => {
-        if (response.ok && new URL(request.url).origin === self.location.origin) {
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/api/") || url.searchParams.has("_rsc") || request.headers.get("RSC")) return;
+
+  if (request.mode === "navigate") {
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(request);
+        if (response.ok) {
           const copy = response.clone();
           caches.open(SHELL).then((cache) => cache.put(request, copy)).catch(() => {});
         }
         return response;
-      })
-      .catch(() => caches.match(request))
-  );
+      } catch {
+        return (await caches.match(request)) || (await caches.match("/home")) || offline();
+      }
+    })());
+    return;
+  }
+
+  if (url.pathname.startsWith("/_next/static/") || /\.(png|svg|ico|webmanifest|woff2?)$/.test(url.pathname)) {
+    event.respondWith((async () => {
+      const cached = await caches.match(request);
+      if (cached) return cached;
+      const response = await fetch(request);
+      if (response.ok) {
+        const copy = response.clone();
+        caches.open(SHELL).then((cache) => cache.put(request, copy)).catch(() => {});
+      }
+      return response;
+    })());
+  }
 });

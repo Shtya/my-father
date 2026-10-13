@@ -2,6 +2,7 @@
 
 import { Field, Form, Select, Sheet } from "@/components/form";
 import { DataTable, DeleteSheet, useRecordActions } from "@/components/data-table";
+import { useOptimisticRows } from "@/components/mutations";
 import { cairoToday } from "@/lib/format";
 
 const types = [
@@ -11,8 +12,9 @@ const types = [
   ["note", "ملاحظة"],
 ];
 
-export function HealthBoard({ rows, cycleId }) {
-  const actions = useRecordActions();
+export function HealthBoard({ rows: serverRows, cycleId, renderedAt }) {
+  const { rows } = useOptimisticRows("health", serverRows, renderedAt);
+  const actions = useRecordActions("health", rows);
   const record = actions.sheet?.row;
 
   return (
@@ -25,6 +27,7 @@ export function HealthBoard({ rows, cycleId }) {
         rows={rows.map((row) => ({
           id: row.id,
           name: row.title,
+          pending: row.pending,
           cells: [row.title, row.typeLabel, row.dateLabel, row.costLabel],
           onEdit: () => actions.open({ type: "edit", row }),
           onDelete: () => actions.open({ type: "delete", row }),
@@ -39,6 +42,10 @@ export function HealthBoard({ rows, cycleId }) {
             onDone={actions.close}
             submitLabel={record ? "حفظ التعديل" : "حفظ السجل"}
             successMessage={record ? "التعديل اتحفظ." : "السجل اتحفظ."}
+            label="سجل الصحة"
+            optimistic="health"
+            record={record}
+            reopen={{ scope: "health", rowId: record?.id }}
           >
             {!record ? <input type="hidden" name="cycleId" value={cycleId || ""} /> : null}
             <Select label="النوع" name="recordType" defaultValue={record?.recordType || "medicine"}>
@@ -58,10 +65,8 @@ export function HealthBoard({ rows, cycleId }) {
         <DeleteSheet
           title="حذف سجل"
           body={`تحذف سجل ${record.title}؟`}
-          error={actions.error}
-          pending={actions.pending}
           onClose={actions.close}
-          onConfirm={() => actions.remove(`/api/health/${record.id}`, "السجل اتحذف.")}
+          onConfirm={() => actions.remove(`/api/health/${record.id}`, { message: "السجل اتحذف.", label: "سجل الصحة", id: record.id })}
         />
       ) : null}
     </>

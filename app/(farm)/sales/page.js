@@ -1,6 +1,7 @@
+import { LiveTotal } from "@/components/live-total";
 import { SalesBoard } from "@/components/sales-board";
-import { MORE, Page, Total } from "@/components/ui";
-import { getActiveCycle, listCustomers, listSales } from "@/lib/farm";
+import { MORE, Page } from "@/components/ui";
+import { getActiveCycle, listCustomers, listSales, serverNow } from "@/lib/farm";
 import { formatDate, formatMoney, formatNumber } from "@/lib/format";
 
 function day(value) {
@@ -16,16 +17,21 @@ function day(value) {
 }
 
 export default async function SalesPage() {
+  const renderedAt = serverNow();
   const [rows, customers, cycle] = await Promise.all([listSales(), listCustomers(), getActiveCycle()]);
+  const total = rows.reduce((sum, row) => sum + Number(row.total_amount), 0);
   return (
-    <Page back={MORE} title="المبيعات" action={<Total label="إجمالي المبيعات" value={formatMoney(rows.reduce((sum, row) => sum + Number(row.total_amount), 0))} />}>
+    <Page back={MORE} title="المبيعات" action={<LiveTotal label="إجمالي المبيعات" base={total} scope="sales" ids={rows.map((row) => row.id)} renderedAt={renderedAt} />}>
       <SalesBoard
+        renderedAt={renderedAt}
         cycleId={cycle?.cycle.id || ""}
         customers={customers.map((item) => ({ id: item.id, name: item.name }))}
         rows={rows.map((row) => ({
           id: row.id,
           customerId: row.customer_id || "",
           customerName: row.customer_name || "",
+          totalAmount: Number(row.total_amount),
+          paidAmount: Number(row.paid_amount),
           totalLabel: formatMoney(row.total_amount),
           dateLabel: formatDate(row.sale_date),
           saleDate: day(row.sale_date),

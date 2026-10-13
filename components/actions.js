@@ -1,45 +1,49 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Field, Form, NETWORK_ERROR, Sheet } from "@/components/form";
-import { notify } from "@/components/toast";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { Field, Form, Sheet } from "@/components/form";
+import { currentPath, registerOwner, submit, useOperations, useOptimisticRows, useReopen } from "@/components/mutations";
+import { Line } from "@/components/ui";
 import { formatMoney } from "@/lib/format";
 
 export function CloseCycle({ id }) {
-  const router = useRouter();
+  const owner = useId();
+  const key = `POST /api/cycles/${id}/close`;
+  const scope = `close:${id}`;
   const [open, setOpen] = useState(false);
-  const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
+  const op = useOperations().find((item) => item.key === key) || null;
+  const pending = op?.status === "pending";
+  const error = op?.status === "error" ? op.error : "";
 
-  async function closeCycle() {
+  useEffect(() => (open ? registerOwner(owner) : undefined), [open, owner]);
+  useReopen(scope, useCallback(() => setOpen(true), []));
+
+  function closeCycle() {
     if (pending) return;
-    setPending(true);
-    setError("");
-    let response;
-    try {
-      response = await fetch(`/api/cycles/${id}/close`, { method: "POST" });
-    } catch {
-      setError(NETWORK_ERROR);
-      setPending(false);
-      return;
-    }
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      setError(data.error || "ما قدرناش نقفل الدورة");
-      setPending(false);
-      return;
-    }
-    setPending(false);
+    submit({
+      key,
+      formKey: key,
+      owner,
+      url: `/api/cycles/${id}/close`,
+      method: "POST",
+      page: currentPath(),
+      successMessage: "الدورة اتقفلت.",
+      label: "إغلاق الدورة",
+      reopen: { scope },
+    });
     setOpen(false);
-    notify("الدورة اتقفلت.");
-    router.refresh();
   }
 
   return (
     <div>
-      <button type="button" className="h-12 w-full border border-line bg-paper px-4 text-base font-semibold" onClick={() => setOpen(true)}>
-        إغلاق الدورة
+      <button
+        type="button"
+        disabled={pending}
+        aria-busy={pending}
+        className="h-12 w-full border border-line bg-paper px-4 text-base font-semibold disabled:opacity-60"
+        onClick={() => setOpen(true)}
+      >
+        {pending ? "الدورة بتتقفل..." : "إغلاق الدورة"}
       </button>
       {open ? (
         <Sheet title="إغلاق الدورة" onClose={() => setOpen(false)}>
@@ -48,7 +52,7 @@ export function CloseCycle({ id }) {
           <div className="mt-4 grid grid-cols-2 gap-2">
             <button type="button" className="h-12 border border-line bg-white font-semibold" onClick={() => setOpen(false)}>لا، رجوع</button>
             <button type="button" disabled={pending} aria-busy={pending} className="h-12 bg-green font-semibold disabled:opacity-60" onClick={closeCycle}>
-              {pending ? "بيتقفل..." : "أيوه، اقفلها"}
+              {pending ? "بيتقفل..." : error && op?.retryable ? "حاول تاني" : "أيوه، اقفلها"}
             </button>
           </div>
         </Sheet>
@@ -59,6 +63,8 @@ export function CloseCycle({ id }) {
 
 export function EditCycle({ cycle }) {
   const [open, setOpen] = useState(false);
+  const scope = `cycle:${cycle.id}`;
+  useReopen(scope, useCallback(() => setOpen(true), []));
   return (
     <div>
       <button type="button" className="h-12 w-full border border-line bg-paper px-4 text-base font-semibold" onClick={() => setOpen(true)}>
@@ -67,7 +73,15 @@ export function EditCycle({ cycle }) {
       {open ? (
         <Sheet title="تعديل بيانات الدورة" onClose={() => setOpen(false)}>
           <p className="mb-3 text-sm text-muted">عدد الكتاكيت وتاريخ البداية ما بيتعدلوش هنا عشان الحسابات ما تتلخبطش.</p>
-          <Form endpoint={`/api/cycles/${cycle.id}`} method="PATCH" onDone={() => setOpen(false)} submitLabel="حفظ التعديل" successMessage="بيانات الدورة اتحفظت.">
+          <Form
+            endpoint={`/api/cycles/${cycle.id}`}
+            method="PATCH"
+            onDone={() => setOpen(false)}
+            submitLabel="حفظ التعديل"
+            successMessage="بيانات الدورة اتحفظت."
+            label="بيانات الدورة"
+            reopen={{ scope }}
+          >
             <Field label="اسم الدورة" name="name" required defaultValue={cycle.name} />
             <Field label="النوع" name="poultryType" defaultValue={cycle.poultry_type || ""} />
             <Field label="السلالة" name="breed" defaultValue={cycle.breed || ""} />
@@ -83,23 +97,50 @@ export function EditCycle({ cycle }) {
 }
 
 export function BookmarkButton({ slug, initial }) {
-  const router = useRouter();
+  const url = `/api/articles/${slug}/bookmark`;
+  const operations = useOperations();
+  const latest = operations.findLast?.((op) => op.url === url && op.status !== "error")
+    ?? [...operations].reverse().find((op) => op.url === url && op.status !== "error");
+  const bookmarked = latest ? latest.body.bookmarked : initial;
+
+  function toggle() {
+    const next = !bookmarked;
+    submit({
+      key: `${url} ${next}`,
+      formKey: url,
+      url,
+      method: "POST",
+      body: { bookmarked: next },
+      page: currentPath(),
+      successMessage: next ? "المقال اتحفظ." : "المقال اتشال من المحفوظ.",
+      label: next ? "حفظ المقال" : "شيل المقال من المحفوظ",
+    });
+  }
+
   return (
-    <button
-      type="button"
-      className="h-12 border border-line px-4"
-      onClick={async () => {
-        await fetch(`/api/articles/${slug}/bookmark`, { method: "POST" });
-        router.refresh();
-      }}
-    >
-      {initial ? "محفوظ" : "حفظ المقال"}
+    <button type="button" className="h-12 border border-line px-4" aria-pressed={bookmarked} onClick={toggle}>
+      {bookmarked ? "محفوظ" : "حفظ المقال"}
     </button>
+  );
+}
+
+export function PersonBalance({ scope, id, total, paid, remaining, renderedAt, paidLabel, remainingLabel, totalLabel }) {
+  const rows = useMemo(() => [{ id, remaining: Number(remaining) }], [id, remaining]);
+  const { rows: live } = useOptimisticRows(scope, rows, renderedAt);
+  const left = Number(live[0]?.remaining ?? remaining);
+  return (
+    <>
+      <Line label={totalLabel} value={formatMoney(total)} />
+      <Line label={paidLabel} value={formatMoney(Number(paid) + Number(remaining) - left)} />
+      <Line label={remainingLabel} value={formatMoney(left)} />
+    </>
   );
 }
 
 export function PaySheet({ title, submitLabel, direction, personId, defaultDate, max }) {
   const [open, setOpen] = useState(false);
+  const scope = `pay:${personId}`;
+  useReopen(scope, useCallback(() => setOpen(true), []));
   return (
     <>
       <button type="button" className="h-12 w-full bg-green text-base font-semibold" onClick={() => setOpen(true)}>
@@ -108,7 +149,15 @@ export function PaySheet({ title, submitLabel, direction, personId, defaultDate,
       {open ? (
         <Sheet title={title} onClose={() => setOpen(false)}>
           {max ? <p className="mb-3 text-base">الباقي: <b className="num">{formatMoney(max)}</b></p> : null}
-          <Form endpoint="/api/payments" onDone={() => setOpen(false)} submitLabel="حفظ الدفعة" successMessage="الدفعة اتسجلت.">
+          <Form
+            endpoint="/api/payments"
+            onDone={() => setOpen(false)}
+            submitLabel="حفظ الدفعة"
+            successMessage="الدفعة اتسجلت."
+            label="الدفعة"
+            optimistic="payment"
+            reopen={{ scope }}
+          >
             <input type="hidden" name="direction" value={direction} />
             <input type="hidden" name={direction === "in" ? "customerId" : "supplierId"} value={personId} />
             <Field label="المبلغ" name="amount" type="number" required step="0.01" min="0" />
@@ -120,4 +169,3 @@ export function PaySheet({ title, submitLabel, direction, personId, defaultDate,
     </>
   );
 }
-

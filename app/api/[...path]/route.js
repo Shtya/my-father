@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import * as farm from "@/lib/farm";
 
 function json(data, status = 200) {
-  return NextResponse.json(data, { status });
+  return NextResponse.json(data, { status, headers: { "X-Server-Time": String(farm.serverNow()) } });
 }
 
 async function dispatch(request, context, method) {
@@ -63,7 +63,7 @@ async function dispatch(request, context, method) {
     if (root === "health" && id && method === "PATCH") return json(await farm.updateHealth(id, body));
     if (root === "health" && id && method === "DELETE") return json(await farm.deleteHealth(id));
     if (root === "articles" && !id && method === "GET") return json(await farm.listArticles(filters));
-    if (root === "articles" && id && action === "bookmark" && method === "POST") return json(await farm.toggleBookmark(id));
+    if (root === "articles" && id && action === "bookmark" && method === "POST") return json(await farm.toggleBookmark(id, body));
     if (root === "articles" && id && action === "read" && method === "POST") return json(await farm.markRead(id));
     if (root === "articles" && id && method === "GET") return json(await farm.getArticle(id));
     if (root === "article-categories" && method === "GET") return json(await farm.listArticleCategories());

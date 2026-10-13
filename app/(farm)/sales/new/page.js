@@ -7,7 +7,7 @@ export default async function NewSalePage() {
   if (!cycle) return <Sheet title="تسجيل بيع"><p>ابدأ دورة الأول عشان البيع يخصم من الفراخ الموجودة.</p></Sheet>;
   return (
     <Sheet eyebrow={`${cycle.current} فرخة موجودة`} title="تسجيل بيع">
-      <Form endpoint="/api/sales" redirectTo="/sales" submitLabel="حفظ البيع">
+      <Form endpoint="/api/sales" redirectTo="/sales" submitLabel="حفظ البيع" successMessage="البيع اتسجل." label="البيع" optimistic="sale">
         <input type="hidden" name="cycleId" value={cycle.cycle.id} />
         <Select label="العميل" name="customerId" defaultValue="">
           <option value="">عميل جديد</option>

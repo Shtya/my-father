@@ -1,11 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
-import { notify } from "@/components/toast";
+import { adoptDraft, currentPath, ownedOperation, registerOwner, submit, useOperations, uuid } from "@/components/mutations";
+import { buildPatches } from "@/components/optimistic";
 
-export const NETWORK_ERROR = "النت فصل أو الإرسال ما وصلش. اللي كتبته لسه موجود، جرّب تاني.";
+export { NETWORK_ERROR } from "@/components/mutations";
 
 export function Sheet({ title, eyebrow, children, onClose }) {
   const router = useRouter();
@@ -65,72 +66,117 @@ export function Sheet({ title, eyebrow, children, onClose }) {
   );
 }
 
-export function Form({ endpoint, method = "POST", redirectTo, onDone, children, submitLabel, successMessage = "اتحفظ بنجاح." }) {
+function readValues(form) {
+  const values = Object.fromEntries(new FormData(form).entries());
+  for (const element of form.querySelectorAll('input[type="checkbox"]')) {
+    values[element.name] = element.checked;
+  }
+  return values;
+}
+
+const VALUE_SETTERS = {
+  INPUT: Object.getOwnPropertyDescriptor(globalThis.HTMLInputElement?.prototype || {}, "value")?.set,
+  SELECT: Object.getOwnPropertyDescriptor(globalThis.HTMLSelectElement?.prototype || {}, "value")?.set,
+  TEXTAREA: Object.getOwnPropertyDescriptor(globalThis.HTMLTextAreaElement?.prototype || {}, "value")?.set,
+};
+
+function restoreValues(form, values) {
+  if (!form || !values) return;
+  for (const [name, value] of Object.entries(values)) {
+    const element = form.elements.namedItem(name);
+    if (!element || element instanceof RadioNodeList || element.type === "hidden") continue;
+    if (element.type === "checkbox") {
+      if (element.checked !== Boolean(value)) element.click();
+      continue;
+    }
+    const text = value === null || value === undefined ? "" : String(value);
+    VALUE_SETTERS[element.tagName]?.call(element, text);
+    element.dispatchEvent(new Event(element.tagName === "SELECT" ? "change" : "input", { bubbles: true }));
+    if (text) element.closest("details")?.setAttribute("open", "");
+  }
+}
+
+/**
+ * Optimistic form: the sheet closes and the list updates right away, the request runs in the
+ * background (components/mutations.js), and a failure rolls the list back and keeps the typed values
+ * so the same form can reopen with them.
+ */
+export function Form({
+  endpoint,
+  method = "POST",
+  redirectTo,
+  onDone,
+  children,
+  submitLabel,
+  successMessage = "اتحفظ بنجاح.",
+  optimistic,
+  record,
+  reopen,
+  label = "البيانات",
+}) {
   const router = useRouter();
-  const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
+  const owner = useId();
+  const formRef = useRef(null);
   const errorRef = useRef(null);
+  const formKey = `${method} ${endpoint}`;
+  const op = useOperations().find((item) => item.owner === owner) || null;
+  const pending = op?.status === "pending";
+  const error = op?.status === "error" ? op.error : "";
+
+  useEffect(() => registerOwner(owner), [owner]);
+
+  useEffect(() => {
+    const draft = adoptDraft(formKey, owner);
+    if (draft) restoreValues(formRef.current, draft.values);
+  }, [formKey, owner]);
 
   useEffect(() => {
     if (error) errorRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [error]);
 
-  async function onSubmit(event) {
+  function onSubmit(event) {
     event.preventDefault();
-    if (pending) return;
-    setPending(true);
-    setError("");
     const form = event.currentTarget;
-    const data = new FormData(form);
-    const body = Object.fromEntries(data.entries());
-    for (const element of form.querySelectorAll('input[type="checkbox"]')) {
-      body[element.name] = element.checked;
-    }
-    let response;
-    try {
-      response = await fetch(endpoint, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-    } catch {
-      setError(NETWORK_ERROR);
-      setPending(false);
-      return;
-    }
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      setError(payload.error || "ما اتحفظش. راجع البيانات وجرّب تاني.");
-      setPending(false);
-      return;
-    }
-    if (payload.vetNotice) notify("اتحفظ. لو الأعراض شديدة كلم الطبيب البيطري.", "warn");
-    else notify(successMessage);
-    form.reset();
-    setPending(false);
+    const current = ownedOperation(owner);
+    if (current?.status === "pending") return;
+    const values = readValues(form);
+    const key = current?.status === "error" ? current.key : uuid();
+    submit({
+      key,
+      formKey,
+      owner,
+      url: endpoint,
+      method,
+      body: method === "POST" ? { ...values, requestId: key } : values,
+      values,
+      page: currentPath(),
+      landing: redirectTo || null,
+      successMessage,
+      label,
+      patches: buildPatches(optimistic, values, form, key, record),
+      reopen: reopen || null,
+    });
     if (onDone) {
       onDone();
-      router.refresh();
       return;
     }
-    if (redirectTo && form.closest(".sheet-panel")) {
-      if (window.history.length > 1) router.back();
+    if (redirectTo) {
+      if (form.closest(".sheet-panel") && window.history.length > 1) router.back();
       else router.push(redirectTo);
-      router.refresh();
-    } else if (redirectTo) {
-      router.push(redirectTo);
-      router.refresh();
-    } else {
-      router.refresh();
     }
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form ref={formRef} onSubmit={onSubmit} className="space-y-4">
       {children}
-      {error ? <p ref={errorRef} className="bg-clay-soft px-3 py-3 font-semibold text-clay" role="alert">{error}</p> : null}
+      {error ? (
+        <p ref={errorRef} className="bg-clay-soft px-3 py-3 font-semibold text-clay" role="alert">
+          {error}
+          {op?.retryable ? <span className="mt-1 block text-sm font-normal">البيانات زي ما كتبتها. دوس الزرار تحت تاني.</span> : null}
+        </p>
+      ) : null}
       <button type="submit" disabled={pending} aria-busy={pending} className="h-13 w-full bg-green text-base font-semibold disabled:opacity-60">
-        {pending ? "بيتحفظ..." : submitLabel}
+        {pending ? "بيتحفظ..." : error && op?.retryable ? "حاول تاني" : submitLabel}
       </button>
     </form>
   );

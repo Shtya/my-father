@@ -2,10 +2,12 @@
 
 import { Field, Form, Select, Sheet } from "@/components/form";
 import { DataTable, DeleteSheet, useRecordActions } from "@/components/data-table";
+import { useOptimisticRows } from "@/components/mutations";
 import { cairoToday } from "@/lib/format";
 
-export function SalesBoard({ rows, customers, cycleId }) {
-  const actions = useRecordActions();
+export function SalesBoard({ rows: serverRows, customers, cycleId, renderedAt }) {
+  const { rows } = useOptimisticRows("sales", serverRows, renderedAt);
+  const actions = useRecordActions("sales", rows);
   const record = actions.sheet?.row;
 
   return (
@@ -19,6 +21,7 @@ export function SalesBoard({ rows, customers, cycleId }) {
         rows={rows.map((row) => ({
           id: row.id,
           name: row.customerName || "بيع نقدي",
+          pending: row.pending,
           cells: [row.customerName || "بيع نقدي", row.totalLabel, row.dateLabel, row.birdsLabel, row.remainingLabel],
           onEdit: () => actions.open({ type: "edit", row }),
           onDelete: () => actions.open({ type: "delete", row }),
@@ -33,6 +36,10 @@ export function SalesBoard({ rows, customers, cycleId }) {
               onDone={actions.close}
               submitLabel={record ? "حفظ التعديل" : "حفظ البيع"}
               successMessage={record ? "التعديل اتحفظ." : "البيع اتسجل."}
+              label="البيع"
+              optimistic="sale"
+              record={record}
+              reopen={{ scope: "sales", rowId: record?.id }}
             >
               {!record ? <input type="hidden" name="cycleId" value={cycleId} /> : null}
               <Select label="العميل" name="customerId" defaultValue={record?.customerId || ""}>
@@ -54,10 +61,8 @@ export function SalesBoard({ rows, customers, cycleId }) {
         <DeleteSheet
           title="حذف بيع"
           body={`تحذف بيع ${record.birdsLabel} فرخة بـ ${record.totalLabel} يوم ${record.dateLabel}؟ العدد هيرجع للفراخ الموجودة، والدفعات المسجلة على البيع ده هتتحذف معاه.`}
-          error={actions.error}
-          pending={actions.pending}
           onClose={actions.close}
-          onConfirm={() => actions.remove(`/api/sales/${record.id}`, "البيع اتحذف.")}
+          onConfirm={() => actions.remove(`/api/sales/${record.id}`, { message: "البيع اتحذف.", label: "البيع", id: record.id, delta: record.totalAmount })}
         />
       ) : null}
     </>

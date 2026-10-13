@@ -1,11 +1,12 @@
 import { notFound } from "next/navigation";
-import { getCustomer } from "@/lib/farm";
-import { PaySheet } from "@/components/actions";
+import { getCustomer, serverNow } from "@/lib/farm";
+import { PaySheet, PersonBalance } from "@/components/actions";
 import { Line, Page, Section } from "@/components/ui";
 import { cairoToday, formatDate, formatMoney, formatNumber } from "@/lib/format";
 
 export default async function CustomerPage({ params }) {
   const { id } = await params;
+  const renderedAt = serverNow();
   let person;
   try {
     person = await getCustomer(id);
@@ -17,9 +18,17 @@ export default async function CustomerPage({ params }) {
   return (
     <Page back={{ href: "/customers", label: "العملاء" }} eyebrow={person.phone || "عميل"} title={person.name}>
       <Section title="الحساب">
-        <Line label="إجمالي الشراء" value={formatMoney(person.total_amount)} />
-        <Line label="اللي دفعه" value={formatMoney(person.paid_amount)} />
-        <Line label="الباقي عليه" value={formatMoney(remaining)} />
+        <PersonBalance
+          scope="customers"
+          id={id}
+          total={Number(person.total_amount)}
+          paid={Number(person.paid_amount)}
+          remaining={remaining}
+          renderedAt={renderedAt}
+          totalLabel="إجمالي الشراء"
+          paidLabel="اللي دفعه"
+          remainingLabel="الباقي عليه"
+        />
       </Section>
       {remaining > 0 ? (
         <PaySheet title={`دفعة من ${person.name}`} submitLabel="تسجيل دفعة استلمتها" direction="in" personId={id} defaultDate={cairoToday()} max={remaining} />

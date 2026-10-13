@@ -1,12 +1,13 @@
 import { InventoryBoard } from "@/components/inventory-board";
 import { MORE, Page } from "@/components/ui";
-import { listInventory } from "@/lib/farm";
+import { listInventory, serverNow } from "@/lib/farm";
 
 export default async function InventoryPage() {
+  const renderedAt = serverNow();
   const items = await listInventory();
   return (
     <Page back={MORE} title="المخزون">
-      <InventoryBoard items={items.map((item) => ({
+      <InventoryBoard renderedAt={renderedAt} items={items.map((item) => ({
         id: item.id,
         name: item.name,
         unit: item.unit,

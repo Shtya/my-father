@@ -1,6 +1,7 @@
 import { ExpensesBoard } from "@/components/expenses-board";
-import { MORE, Page, Total } from "@/components/ui";
-import { getActiveCycle, listCategories, listExpenses, listSuppliers } from "@/lib/farm";
+import { LiveTotal } from "@/components/live-total";
+import { MORE, Page } from "@/components/ui";
+import { getActiveCycle, listCategories, listExpenses, listSuppliers, serverNow } from "@/lib/farm";
 import { formatDate, formatMoney } from "@/lib/format";
 
 function day(value) {
@@ -16,6 +17,7 @@ function day(value) {
 }
 
 export default async function ExpensesPage() {
+  const renderedAt = serverNow();
   const [rows, categories, suppliers, cycle] = await Promise.all([
     listExpenses(),
     listCategories(),
@@ -24,8 +26,9 @@ export default async function ExpensesPage() {
   ]);
   const total = rows.reduce((sum, row) => sum + Number(row.amount), 0);
   return (
-    <Page back={MORE} title="المصاريف" action={<Total label="إجمالي المصاريف" value={formatMoney(total)} />}>
+    <Page back={MORE} title="المصاريف" action={<LiveTotal label="إجمالي المصاريف" base={total} scope="expenses" ids={rows.map((row) => row.id)} renderedAt={renderedAt} />}>
       <ExpensesBoard
+        renderedAt={renderedAt}
         cycleId={cycle?.cycle.id || ""}
         categories={categories.map((item) => ({ id: item.id, name_ar: item.name_ar }))}
         suppliers={suppliers.map((item) => ({ id: item.id, name: item.name }))}

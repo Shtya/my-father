@@ -1,4 +1,5 @@
 import { Cairo } from "next/font/google";
+import { MutationBridge } from "@/components/mutations";
 import { Pwa } from "@/components/pwa";
 import { Toaster } from "@/components/toast";
 import "./globals.css";
@@ -43,6 +44,7 @@ export default function RootLayout({ children }) {
     <html lang="ar" dir="rtl" className={`${cairo.variable} h-full`} style={{ colorScheme: "only light" }}>
       <body className="min-h-full bg-bg text-ink">
         <Pwa />
+        <MutationBridge />
         {children}
         <Toaster />
       </body>

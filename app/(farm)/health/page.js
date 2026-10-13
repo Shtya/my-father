@@ -1,6 +1,6 @@
 import { HealthBoard } from "@/components/health-board";
 import { MORE, Page } from "@/components/ui";
-import { getActiveCycle, listHealth } from "@/lib/farm";
+import { getActiveCycle, listHealth, serverNow } from "@/lib/farm";
 import { formatDate, formatMoney } from "@/lib/format";
 
 const types = { medicine: "دواء", vaccine: "تطعيم", symptom: "عرض", note: "ملاحظة" };
@@ -18,11 +18,13 @@ function day(value) {
 }
 
 export default async function HealthPage() {
+  const renderedAt = serverNow();
   const [rows, cycle] = await Promise.all([listHealth(null), getActiveCycle()]);
   return (
     <Page back={MORE} title="صحة الفراخ">
       <p className="bg-amber-soft px-4 py-3 text-amber">التسجيل هنا للمتابعة فقط، ومش تشخيص. لو الأعراض شديدة كلم الطبيب البيطري.</p>
       <HealthBoard
+        renderedAt={renderedAt}
         cycleId={cycle?.cycle.id || ""}
         rows={rows.map((row) => ({
           id: row.id,

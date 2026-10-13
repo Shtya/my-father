@@ -1,11 +1,12 @@
 import { notFound } from "next/navigation";
-import { getSupplier } from "@/lib/farm";
-import { PaySheet } from "@/components/actions";
+import { getSupplier, serverNow } from "@/lib/farm";
+import { PaySheet, PersonBalance } from "@/components/actions";
 import { cairoToday, formatDate, formatMoney } from "@/lib/format";
 import { Line, Page, Section } from "@/components/ui";
 
 export default async function SupplierPage({ params }) {
   const { id } = await params;
+  const renderedAt = serverNow();
   let person;
   try {
     person = await getSupplier(id);
@@ -17,9 +18,17 @@ export default async function SupplierPage({ params }) {
   return (
     <Page back={{ href: "/suppliers", label: "الموردين" }} eyebrow={person.products || person.phone || "مورد"} title={person.name}>
       <Section title="الحساب">
-        <Line label="إجمالي الشراء منه" value={formatMoney(person.total_amount)} />
-        <Line label="اللي دفعناه" value={formatMoney(person.paid_amount)} />
-        <Line label="الباقي علينا" value={formatMoney(remaining)} />
+        <PersonBalance
+          scope="suppliers"
+          id={id}
+          total={Number(person.total_amount)}
+          paid={Number(person.paid_amount)}
+          remaining={remaining}
+          renderedAt={renderedAt}
+          totalLabel="إجمالي الشراء منه"
+          paidLabel="اللي دفعناه"
+          remainingLabel="الباقي علينا"
+        />
       </Section>
       {remaining > 0 ? (
         <PaySheet title={`سداد لـ ${person.name}`} submitLabel="تسجيل فلوس دفعتها" direction="out" personId={id} defaultDate={cairoToday()} max={remaining} />

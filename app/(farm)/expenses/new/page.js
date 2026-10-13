@@ -6,7 +6,7 @@ export default async function NewExpensePage() {
   const [categories, suppliers, cycle] = await Promise.all([listCategories(), listSuppliers(), getActiveCycle()]);
   return (
     <Sheet title="إضافة مصروف">
-      <Form endpoint="/api/expenses" redirectTo="/expenses" submitLabel="حفظ المصروف">
+      <Form endpoint="/api/expenses" redirectTo="/expenses" submitLabel="حفظ المصروف" successMessage="المصروف اتسجل." label="المصروف" optimistic="expense">
         <Select label="نوع المصروف" name="categoryId" required defaultValue="feed">
           {categories.map((item) => <option key={item.id} value={item.id}>{item.name_ar}</option>)}
         </Select>

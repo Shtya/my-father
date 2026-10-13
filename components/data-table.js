@@ -1,10 +1,9 @@
 "use client";
 
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { NETWORK_ERROR, Sheet } from "@/components/form";
-import { notify } from "@/components/toast";
+import { useCallback, useState } from "react";
+import { Sheet } from "@/components/form";
+import { currentPath, submit, useReopen } from "@/components/mutations";
 
 export function DataTable({ columns, rows, empty, addLabel, onAdd, note }) {
   return (
@@ -21,16 +20,19 @@ export function DataTable({ columns, rows, empty, addLabel, onAdd, note }) {
           </thead>
           <tbody>
             {rows.length ? rows.map((row) => (
-              <tr key={row.id} className="border-b border-line last:border-b-0">
+              <tr key={row.id} aria-busy={row.pending || undefined} className={`border-b border-line last:border-b-0 ${row.pending ? "bg-soft/60" : ""}`}>
                 {row.cells.map((cell, index) => (
-                  <td key={`${row.id}-${index}`} className={`px-3 py-2 align-middle ${index === 0 ? "min-w-28 font-semibold" : "w-0 whitespace-nowrap"}`}>{cell}</td>
+                  <td key={`${row.id}-${index}`} className={`px-3 py-2 align-middle ${index === 0 ? "min-w-28 font-semibold" : "w-0 whitespace-nowrap"} ${row.pending ? "text-muted" : ""}`}>
+                    {cell}
+                    {index === 0 && row.pending ? <span className="block text-sm font-normal text-muted">بيتحفظ...</span> : null}
+                  </td>
                 ))}
                 <td className="w-0 whitespace-nowrap px-2 py-1.5 align-middle">
                   <div className="flex w-max gap-1.5">
-                    <button type="button" aria-label={`تعديل ${row.name || ""}`.trim()} title="تعديل" className="flex h-11 w-11 items-center justify-center border border-line bg-white" onClick={() => row.onEdit()}>
+                    <button type="button" disabled={row.pending} aria-label={`تعديل ${row.name || ""}`.trim()} title={row.pending ? "استنى لحد ما يتحفظ" : "تعديل"} className="flex h-11 w-11 items-center justify-center border border-line bg-white disabled:opacity-40" onClick={() => row.onEdit()}>
                       <Pencil size={18} aria-hidden="true" />
                     </button>
-                    <button type="button" aria-label={`حذف ${row.name || ""}`.trim()} title="حذف" className="flex h-11 w-11 items-center justify-center border border-line bg-white text-clay" onClick={() => row.onDelete()}>
+                    <button type="button" disabled={row.pending} aria-label={`حذف ${row.name || ""}`.trim()} title={row.pending ? "استنى لحد ما يتحفظ" : "حذف"} className="flex h-11 w-11 items-center justify-center border border-line bg-white text-clay disabled:opacity-40" onClick={() => row.onDelete()}>
                       <Trash2 size={18} aria-hidden="true" />
                     </button>
                   </div>
@@ -55,63 +57,62 @@ export function DataTable({ columns, rows, empty, addLabel, onAdd, note }) {
   );
 }
 
-export function DeleteSheet({ title, body, error, pending, onClose, onConfirm }) {
+export function DeleteSheet({ title, body, onClose, onConfirm }) {
   return (
     <Sheet title={title} onClose={onClose}>
       <p className="text-base">{body}</p>
       <p className="mt-2 text-sm text-muted">الحذف ما ينفعش يترجع.</p>
-      {error ? <p className="mt-3 bg-clay-soft px-3 py-3 font-semibold text-clay" role="alert">{error}</p> : null}
       <div className="mt-4 grid grid-cols-2 gap-2">
         <button type="button" className="h-12 border border-line bg-white font-semibold" onClick={onClose}>
           لا، رجوع
         </button>
-        <button type="button" disabled={pending} aria-busy={pending} className="h-12 bg-clay font-semibold text-white disabled:opacity-60" onClick={onConfirm}>
-          {pending ? "بيتحذف..." : "أيوه، احذف"}
+        <button type="button" className="h-12 bg-clay font-semibold text-white" onClick={onConfirm}>
+          أيوه، احذف
         </button>
       </div>
     </Sheet>
   );
 }
 
-export function useRecordActions() {
-  const router = useRouter();
+/**
+ * Sheet state for a table plus optimistic delete. `scope` and `rows` let a failed save reopen
+ * the right sheet (add, or edit of the same row) after the list was rolled back.
+ */
+export function useRecordActions(scope, rows = []) {
   const [sheet, setSheet] = useState(null);
-  const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
 
-  function open(next) {
-    setError("");
-    setSheet(next);
-  }
+  const open = useCallback((next) => setSheet(next), []);
+  const close = useCallback(() => setSheet(null), []);
 
-  function close() {
-    setError("");
-    setPending(false);
+  const onReopen = useCallback((op) => {
+    const rowId = op.reopen?.rowId;
+    if (!rowId) {
+      setSheet({ type: "add" });
+      return true;
+    }
+    const row = rows.find((item) => item.id === rowId);
+    if (!row) return false;
+    setSheet({ type: "edit", row });
+    return true;
+  }, [rows]);
+  useReopen(scope, onReopen);
+
+  function remove(url, { message = "اتحذف.", label = "السجل", id, delta = 0 } = {}) {
+    submit({
+      key: `DELETE ${url}`,
+      formKey: `DELETE ${url}`,
+      url,
+      method: "DELETE",
+      body: null,
+      page: currentPath(),
+      landing: null,
+      successMessage: message,
+      label,
+      patches: scope && id ? [{ scope, type: "remove", id, delta: -Number(delta || 0) }] : [],
+      reopen: null,
+    });
     setSheet(null);
   }
 
-  async function remove(url, message = "اتحذف.") {
-    if (pending) return;
-    setPending(true);
-    setError("");
-    let response;
-    try {
-      response = await fetch(url, { method: "DELETE" });
-    } catch {
-      setPending(false);
-      setError(NETWORK_ERROR);
-      return;
-    }
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      setPending(false);
-      setError(data.error || "ما قدرناش نحذف. جرّب تاني.");
-      return;
-    }
-    close();
-    notify(message);
-    router.refresh();
-  }
-
-  return { sheet, error, pending, open, close, remove };
+  return { sheet, open, close, remove };
 }

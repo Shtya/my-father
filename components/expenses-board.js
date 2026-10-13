@@ -2,10 +2,12 @@
 
 import { Field, Form, Select, Sheet } from "@/components/form";
 import { DataTable, DeleteSheet, useRecordActions } from "@/components/data-table";
+import { useOptimisticRows } from "@/components/mutations";
 import { cairoToday } from "@/lib/format";
 
-export function ExpensesBoard({ rows, categories, suppliers, cycleId }) {
-  const actions = useRecordActions();
+export function ExpensesBoard({ rows: serverRows, categories, suppliers, cycleId, renderedAt }) {
+  const { rows } = useOptimisticRows("expenses", serverRows, renderedAt);
+  const actions = useRecordActions("expenses", rows);
   const record = actions.sheet?.row;
 
   return (
@@ -19,6 +21,7 @@ export function ExpensesBoard({ rows, categories, suppliers, cycleId }) {
         rows={rows.map((row) => ({
           id: row.id,
           name: row.categoryName,
+          pending: row.pending,
           cells: [row.categoryName, row.amountLabel, row.dateLabel, row.supplierName || "—"],
           onEdit: () => actions.open({ type: "edit", row }),
           onDelete: () => actions.open({ type: "delete", row }),
@@ -39,10 +42,8 @@ export function ExpensesBoard({ rows, categories, suppliers, cycleId }) {
         <DeleteSheet
           title="حذف مصروف"
           body={`تحذف مصروف ${record.categoryName} بـ ${record.amountLabel} يوم ${record.dateLabel}؟ لو كان شراء دخل المخزون، الكمية هتتشال من المخزون.`}
-          error={actions.error}
-          pending={actions.pending}
           onClose={actions.close}
-          onConfirm={() => actions.remove(`/api/expenses/${record.id}`, "المصروف اتحذف.")}
+          onConfirm={() => actions.remove(`/api/expenses/${record.id}`, { message: "المصروف اتحذف.", label: "المصروف", id: record.id, delta: record.amount })}
         />
       ) : null}
     </>
@@ -57,6 +58,10 @@ function ExpenseForm({ row, categories, suppliers, cycleId, onDone }) {
       onDone={onDone}
       submitLabel={row ? "حفظ التعديل" : "حفظ المصروف"}
       successMessage={row ? "التعديل اتحفظ." : "المصروف اتسجل."}
+      label="المصروف"
+      optimistic="expense"
+      record={row}
+      reopen={{ scope: "expenses", rowId: row?.id }}
     >
       <Select label="نوع المصروف" name="categoryId" required defaultValue={row?.categoryId || "feed"}>
         {categories.map((item) => <option key={item.id} value={item.id}>{item.name_ar}</option>)}

@@ -3,11 +3,15 @@
 import Link from "next/link";
 import { Field, Form, Sheet } from "@/components/form";
 import { DataTable, DeleteSheet, useRecordActions } from "@/components/data-table";
+import { useOptimisticRows } from "@/components/mutations";
+import { formatMoney } from "@/lib/format";
 
-export function PeopleBoard({ kind, rows }) {
-  const actions = useRecordActions();
-  const record = actions.sheet?.row;
+export function PeopleBoard({ kind, rows: serverRows, renderedAt }) {
   const customer = kind === "customer";
+  const scope = customer ? "customers" : "suppliers";
+  const { rows } = useOptimisticRows(scope, serverRows, renderedAt);
+  const actions = useRecordActions(scope, rows);
+  const record = actions.sheet?.row;
   const endpoint = customer ? "/api/customers" : "/api/suppliers";
   const noun = customer ? "العميل" : "المورد";
 
@@ -21,10 +25,13 @@ export function PeopleBoard({ kind, rows }) {
         rows={rows.map((row) => ({
           id: row.id,
           name: row.name,
+          pending: row.pending,
           cells: [
-            <Link key="name" href={row.href} className="inline-flex min-h-11 items-center font-semibold text-green underline underline-offset-4">{row.name}</Link>,
+            row.pending
+              ? <span key="name">{row.name}</span>
+              : <Link key="name" href={row.href} className="inline-flex min-h-11 items-center font-semibold text-green underline underline-offset-4">{row.name}</Link>,
             row.phone || "—",
-            row.remainingLabel,
+            formatMoney(row.remaining),
             row.totalLabel,
           ],
           onEdit: () => actions.open({ type: "edit", row }),
@@ -39,6 +46,10 @@ export function PeopleBoard({ kind, rows }) {
             onDone={actions.close}
             submitLabel={record ? "حفظ التعديل" : `حفظ ${noun}`}
             successMessage={record ? "التعديل اتحفظ." : `${noun} اتضاف.`}
+            label={noun}
+            optimistic={customer ? "customer" : "supplier"}
+            record={record}
+            reopen={{ scope, rowId: record?.id }}
           >
             <Field label="الاسم" name="name" required defaultValue={record?.name || ""} />
             <Field label="التليفون" name="phone" type="tel" defaultValue={record?.phone || ""} />
@@ -51,10 +62,8 @@ export function PeopleBoard({ kind, rows }) {
         <DeleteSheet
           title={`حذف ${noun}`}
           body={`تحذف ${record.name}؟ الحذف متاح بس لو ما فيش عليه حساب متسجل.`}
-          error={actions.error}
-          pending={actions.pending}
           onClose={actions.close}
-          onConfirm={() => actions.remove(`${endpoint}/${record.id}`, `${noun} اتحذف.`)}
+          onConfirm={() => actions.remove(`${endpoint}/${record.id}`, { message: `${noun} اتحذف.`, label: noun, id: record.id, delta: record.remaining })}
         />
       ) : null}
     </>

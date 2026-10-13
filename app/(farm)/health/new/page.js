@@ -7,7 +7,7 @@ export default async function NewHealthPage() {
   return (
     <Sheet title="تسجيل صحة">
       <p className="text-sm text-muted">اكتب اللي حصل. التطبيق مش هيقولك تعالج بإيه.</p>
-      <Form endpoint="/api/health" redirectTo="/health" submitLabel="حفظ">
+      <Form endpoint="/api/health" redirectTo="/health" submitLabel="حفظ" successMessage="السجل اتحفظ." label="سجل الصحة" optimistic="health">
         <input type="hidden" name="cycleId" value={cycle?.cycle.id || ""} />
         <Select label="النوع" name="recordType" defaultValue="medicine">
           <option value="medicine">دواء</option>

@@ -14,7 +14,7 @@ export default async function SettingsPage() {
   return (
     <Page back={MORE} title="الإعدادات">
       <p className="text-base text-muted">لتثبيت التطبيق على التليفون: من قائمة المتصفح اختار «إضافة إلى الشاشة الرئيسية».</p>
-      <Form endpoint="/api/settings" method="PATCH" submitLabel="حفظ الإعدادات" successMessage="الإعدادات اتحفظت.">
+      <Form endpoint="/api/settings" method="PATCH" submitLabel="حفظ الإعدادات" successMessage="الإعدادات اتحفظت." label="الإعدادات">
         <Field label="زيادة الوزن المتوقعة في اليوم (جرام)" name="assumedDailyGainGrams" type="number" step="1" defaultValue={farm.assumed_daily_gain_grams} hint="بتستخدم في تقدير «لو بعت ولا استنيت»." />
         <fieldset className="border-y border-line bg-paper">
           <legend className="mb-1 text-base font-bold">التنبيهات</legend>

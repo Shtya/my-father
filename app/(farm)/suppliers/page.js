@@ -1,16 +1,19 @@
 import Link from "next/link";
+import { LiveTotal } from "@/components/live-total";
 import { PeopleBoard } from "@/components/people-board";
-import { MORE, Page, Total } from "@/components/ui";
-import { listSuppliers } from "@/lib/farm";
+import { MORE, Page } from "@/components/ui";
+import { listSuppliers, serverNow } from "@/lib/farm";
 import { formatMoney } from "@/lib/format";
 
 export default async function SuppliersPage() {
+  const renderedAt = serverNow();
   const rows = await listSuppliers();
   const total = rows.reduce((sum, row) => sum + Number(row.remaining), 0);
   return (
-    <Page back={MORE} title="الموردين" action={<Total label="فلوس علينا" value={formatMoney(total)} />}>
+    <Page back={MORE} title="الموردين" action={<LiveTotal label="فلوس علينا" base={total} scope="suppliers" ids={rows.map((row) => row.id)} renderedAt={renderedAt} />}>
       <PeopleBoard
         kind="supplier"
+        renderedAt={renderedAt}
         rows={rows.map((row) => ({
           id: row.id,
           href: `/suppliers/${row.id}`,
@@ -18,6 +21,7 @@ export default async function SuppliersPage() {
           phone: row.phone || "",
           products: row.products || "",
           notes: row.notes || "",
+          remaining: Number(row.remaining),
           remainingLabel: formatMoney(row.remaining),
           totalLabel: formatMoney(row.total_amount),
         }))}

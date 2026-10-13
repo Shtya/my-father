@@ -4,7 +4,7 @@ import { Field, Form, Select, Sheet } from "@/components/form";
 export default function NewCyclePage() {
   return (
     <Sheet title="دورة جديدة">
-      <Form endpoint="/api/cycles" redirectTo="/cycle" submitLabel="حفظ الدورة">
+      <Form endpoint="/api/cycles" redirectTo="/cycle" submitLabel="حفظ الدورة" successMessage="الدورة اتفتحت." label="الدورة الجديدة">
         <Field label="اسم الدورة" name="name" required hint="مثال: دورة أكتوبر" />
         <Field label="تاريخ البداية" name="startDate" type="date" required defaultValue={cairoToday()} />
         <Field label="عدد الكتاكيت" name="initialQuantity" type="number" required min="1" />

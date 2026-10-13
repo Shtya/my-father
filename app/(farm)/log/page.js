@@ -14,7 +14,7 @@ export default async function LogPage({ searchParams }) {
   const hasDetails = Boolean(saved && (saved.water_liters || saved.medicine_note || saved.vaccination_note || saved.symptoms || saved.notes));
   return (
     <Sheet eyebrow={cycle.cycle.name} title={logDate === today ? "متابعة النهارده" : `متابعة يوم ${formatDate(logDate)}`}>
-      <Form endpoint="/api/daily-logs" redirectTo="/home" submitLabel={saved ? "حفظ التعديل" : "حفظ المتابعة"} successMessage={saved ? "المتابعة اتعدلت." : "المتابعة اتسجلت."}>
+      <Form endpoint="/api/daily-logs" redirectTo="/home" submitLabel={saved ? "حفظ التعديل" : "حفظ المتابعة"} successMessage={saved ? "المتابعة اتعدلت." : "المتابعة اتسجلت."} label="المتابعة اليومية">
         {saved ? (
           <p className="border border-amber bg-amber-soft px-3 py-3 text-base">
             اليوم ده متسجل قبل كده، والأرقام اللي تحت هي اللي اتسجلت. غيّر اللي محتاج تغيره بس.
