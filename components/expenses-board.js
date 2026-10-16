@@ -1,11 +1,12 @@
 "use client";
 
+import { CycleSelect } from "@/components/cycle-select";
 import { Field, Form, Select, Sheet } from "@/components/form";
 import { DataTable, DeleteSheet, useRecordActions } from "@/components/data-table";
 import { useOptimisticRows } from "@/components/mutations";
 import { cairoToday } from "@/lib/format";
 
-export function ExpensesBoard({ rows: serverRows, categories, suppliers, cycleId, renderedAt }) {
+export function ExpensesBoard({ rows: serverRows, categories, suppliers, cycles, cycleId, renderedAt }) {
   const { rows } = useOptimisticRows("expenses", serverRows, renderedAt);
   const actions = useRecordActions("expenses", rows);
   const record = actions.sheet?.row;
@@ -33,6 +34,7 @@ export function ExpensesBoard({ rows: serverRows, categories, suppliers, cycleId
             row={record}
             categories={categories}
             suppliers={suppliers}
+            cycles={cycles}
             cycleId={cycleId}
             onDone={actions.close}
           />
@@ -50,7 +52,7 @@ export function ExpensesBoard({ rows: serverRows, categories, suppliers, cycleId
   );
 }
 
-function ExpenseForm({ row, categories, suppliers, cycleId, onDone }) {
+function ExpenseForm({ row, categories, suppliers, cycles = [], cycleId, onDone }) {
   return (
     <Form
       endpoint={row ? `/api/expenses/${row.id}` : "/api/expenses"}
@@ -68,7 +70,7 @@ function ExpenseForm({ row, categories, suppliers, cycleId, onDone }) {
       </Select>
       <Field label="المبلغ" name="amount" type="number" step="0.01" min="0" required defaultValue={row?.amount ?? ""} />
       <Field label="التاريخ" name="expenseDate" type="date" required defaultValue={row?.expenseDate || cairoToday()} />
-      {!row ? <input type="hidden" name="cycleId" value={cycleId || ""} /> : null}
+      {!row ? <CycleSelect cycles={cycles} defaultValue={cycleId} allowEmpty /> : null}
       <Select label="طريقة الدفع" name="paymentMethod" defaultValue={row?.paymentMethod || "cash"}>
         <option value="cash">كاش</option>
         <option value="partial">جزء كاش والباقي آجل</option>

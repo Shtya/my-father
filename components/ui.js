@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { logHref } from "@/lib/cycle-rules";
 import { formatNumber } from "@/lib/format";
 
 export const MORE = { href: "/more", label: "المزيد" };
@@ -69,8 +70,8 @@ export function WeightLine({ stats, active, empty = "—" }) {
       <Line
         label="متوسط الوزن"
         value={<span className="text-clay">راجع الوزن</span>}
-        hint={`اتسجل ${formatNumber(stats.suspectWeight)} كيلو للفرخة. لو ده بالجرام اكتبه بالكيلو.${active ? " دوس هنا للتصحيح." : ""}`}
-        href={active ? `/log?date=${day}` : undefined}
+        hint={`اتسجل ${formatNumber(stats.suspectWeight)} كيلو للفرخة. لو ده بالجرام اكتبه بالكيلو.${stats.cycle?.id ? " دوس هنا للتصحيح." : ""}`}
+        href={stats.cycle?.id ? logHref(stats.cycle.id, day) : undefined}
       />
     );
   }

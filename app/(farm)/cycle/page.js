@@ -1,17 +1,30 @@
 import Link from "next/link";
 import { ButtonLink, Empty, Line, Page, Section } from "@/components/ui";
+import { splitCycles } from "@/lib/cycle-rules";
 import { listCycles } from "@/lib/farm";
 import { formatDate, formatMoney, formatNumber } from "@/lib/format";
 
 export default async function CyclesPage() {
   const cycles = await listCycles();
-  const active = cycles.find((row) => row.cycle.status === "active");
+  const { current, extras, previous } = splitCycles(cycles);
   return (
     <Page title="الدورة" action={<ButtonLink href="/cycle/new">دورة جديدة</ButtonLink>}>
-      {active ? <CycleBlock row={active} /> : <Empty title="ما فيش دورة شغالة" body="ابدأ بتسجيل عدد الكتاكيت وتاريخ البداية." href="/cycle/new" action="ابدأ دورة" />}
-      {cycles.filter((row) => row.cycle.status !== "active").length ? (
+      {extras.length ? (
+        <p className="border border-amber bg-amber-soft px-4 py-3 text-base">
+          في أكتر من دورة متعلمة إنها شغالة. قفل اللي خلصت عشان المتابعة والبيع ما يروحوش لدورة غلط.
+        </p>
+      ) : null}
+      {current ? <CycleBlock row={current} /> : <Empty title="ما فيش دورة شغالة" body="ابدأ بتسجيل عدد الكتاكيت وتاريخ البداية." href="/cycle/new" action="ابدأ دورة" />}
+      {extras.length ? (
+        <Section title="دورات لسه متعلمة شغالة">
+          {extras.map((row) => (
+            <Line key={row.cycle.id} href={`/cycle/${row.cycle.id}`} label={row.cycle.name} value={formatNumber(row.current)} hint={`من ${formatDate(row.cycle.start_date)} · اقفلها لو خلصت`} />
+          ))}
+        </Section>
+      ) : null}
+      {previous.length ? (
         <Section title="دورات سابقة">
-          {cycles.filter((row) => row.cycle.status !== "active").map((row) => (
+          {previous.map((row) => (
             <Line key={row.cycle.id} href={`/cycle/${row.cycle.id}`} label={row.cycle.name} value={formatMoney(row.result)} hint={formatDate(row.cycle.start_date)} />
           ))}
         </Section>

@@ -214,7 +214,7 @@ export function Field({ label, name, type = "text", required = false, defaultVal
   );
 }
 
-export function Select({ label, name, defaultValue = "", children, required = false }) {
+export function Select({ label, name, defaultValue = "", children, required = false, hint, onChange }) {
   const initial = defaultValue === undefined || defaultValue === null ? "" : String(defaultValue);
   const [filled, setFilled] = useState(initial !== "");
   return (
@@ -223,11 +223,16 @@ export function Select({ label, name, defaultValue = "", children, required = fa
         name={name}
         defaultValue={defaultValue}
         required={required}
-        onChange={(event) => setFilled(event.target.value !== "")}
+        aria-describedby={hint ? `${name}-hint` : undefined}
+        onChange={(event) => {
+          setFilled(event.target.value !== "");
+          onChange?.(event);
+        }}
       >
         {children}
       </select>
       <span>{label}{required ? <b className="text-clay" aria-hidden="true"> *</b> : null}</span>
+      {hint ? <p id={`${name}-hint`} className="mt-1 text-sm text-muted">{hint}</p> : null}
     </label>
   );
 }

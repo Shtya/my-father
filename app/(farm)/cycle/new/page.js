@@ -1,9 +1,17 @@
-import { cairoToday } from "@/lib/format";
 import { Field, Form, Select, Sheet } from "@/components/form";
+import { NEW_CYCLE_CLOSES_ACTIVE } from "@/lib/cycle-rules";
+import { getActiveCycle } from "@/lib/farm";
+import { cairoToday } from "@/lib/format";
 
-export default function NewCyclePage() {
+export default async function NewCyclePage() {
+  const active = await getActiveCycle();
   return (
     <Sheet title="دورة جديدة">
+      {active ? (
+        <p className="mb-3 border border-amber bg-amber-soft px-3 py-3 text-base">
+          الدورة الشغالة دلوقتي: {active.cycle.name}. {NEW_CYCLE_CLOSES_ACTIVE}
+        </p>
+      ) : null}
       <Form endpoint="/api/cycles" redirectTo="/cycle" submitLabel="حفظ الدورة" successMessage="الدورة اتفتحت." label="الدورة الجديدة">
         <Field label="اسم الدورة" name="name" required hint="مثال: دورة أكتوبر" />
         <Field label="تاريخ البداية" name="startDate" type="date" required defaultValue={cairoToday()} />

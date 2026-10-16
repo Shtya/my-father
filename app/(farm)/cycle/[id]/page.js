@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CloseCycle, EditCycle } from "@/components/actions";
+import { ButtonLink, Line, Page, Section, WeightLine } from "@/components/ui";
+import { logHref } from "@/lib/cycle-rules";
 import { decision, getCycleStats, listDailyLogs } from "@/lib/farm";
 import { formatDate, formatMoney, formatNumber, changeLabel } from "@/lib/format";
-import { ButtonLink, Line, Page, Section, WeightLine } from "@/components/ui";
-import { CloseCycle, EditCycle } from "@/components/actions";
 
 export default async function CycleDetailPage({ params }) {
   const { id } = await params;
@@ -22,7 +24,7 @@ export default async function CycleDetailPage({ params }) {
       back={{ href: "/cycle", label: "الدورة" }}
       eyebrow={active ? "دورة شغالة" : "دورة مقفولة"}
       title={cycle.name}
-      action={active ? <ButtonLink href="/log">تسجيل متابعة النهارده</ButtonLink> : null}
+      action={<ButtonLink href={logHref(id)}>{active ? "تسجيل متابعة النهارده" : "تسجيل متابعة على الدورة دي"}</ButtonLink>}
     >
       <Section title="الفراخ">
         <Line label="البداية" value={formatNumber(stats.cycle.initial_quantity)} hint={formatDate(stats.cycle.start_date)} />
@@ -53,9 +55,13 @@ export default async function CycleDetailPage({ params }) {
       </Section>
       <Section title="آخر المتابعة">
         {logs.length ? logs.slice(0, 7).map((log) => (
-          <Line key={log.id} href={active ? `/log?date=${String(log.log_date).slice(0, 10)}` : undefined} label={formatDate(log.log_date)} value={log.mortality ? `نفوق ${formatNumber(log.mortality)}` : "من غير نفوق"} hint={log.average_weight_kg ? `وزن ${formatNumber(log.average_weight_kg, 2)} كجم` : log.notes || ""} />
+          <Line key={log.id} href={logHref(id, String(log.log_date).slice(0, 10))} label={formatDate(log.log_date)} value={log.mortality ? `نفوق ${formatNumber(log.mortality)}` : "من غير نفوق"} hint={log.average_weight_kg ? `وزن ${formatNumber(log.average_weight_kg, 2)} كجم` : log.notes || ""} />
         )) : <p className="px-3 py-3 text-sm">لسه ما فيش متابعة.</p>}
       </Section>
+      <div className="grid gap-2">
+        <Link href={`/expenses/new?cycleId=${id}`} className="flex h-12 items-center justify-center border border-line bg-paper text-base font-semibold">مصروف على الدورة دي</Link>
+        <Link href={`/sales/new?cycleId=${id}`} className="flex h-12 items-center justify-center border border-line bg-paper text-base font-semibold">بيع على الدورة دي</Link>
+      </div>
       <EditCycle cycle={{
         id: cycle.id,
         name: cycle.name,

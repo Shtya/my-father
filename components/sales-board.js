@@ -1,11 +1,12 @@
 "use client";
 
+import { CycleSelect } from "@/components/cycle-select";
 import { Field, Form, Select, Sheet } from "@/components/form";
 import { DataTable, DeleteSheet, useRecordActions } from "@/components/data-table";
 import { useOptimisticRows } from "@/components/mutations";
 import { cairoToday } from "@/lib/format";
 
-export function SalesBoard({ rows: serverRows, customers, cycleId, renderedAt }) {
+export function SalesBoard({ rows: serverRows, customers, cycles = [], cycleId, renderedAt }) {
   const { rows } = useOptimisticRows("sales", serverRows, renderedAt);
   const actions = useRecordActions("sales", rows);
   const record = actions.sheet?.row;
@@ -29,7 +30,7 @@ export function SalesBoard({ rows: serverRows, customers, cycleId, renderedAt })
       />
       {actions.sheet?.type === "add" || actions.sheet?.type === "edit" ? (
         <Sheet title={record ? "تعديل بيع" : "تسجيل بيع"} onClose={actions.close}>
-          {record || cycleId ? (
+          {record || cycles.length ? (
             <Form
               endpoint={record ? `/api/sales/${record.id}` : "/api/sales"}
               method={record ? "PATCH" : "POST"}
@@ -41,7 +42,7 @@ export function SalesBoard({ rows: serverRows, customers, cycleId, renderedAt })
               record={record}
               reopen={{ scope: "sales", rowId: record?.id }}
             >
-              {!record ? <input type="hidden" name="cycleId" value={cycleId} /> : null}
+              {!record ? <CycleSelect cycles={cycles} defaultValue={cycleId} showBirds /> : null}
               <Select label="العميل" name="customerId" defaultValue={record?.customerId || ""}>
                 <option value="">عميل جديد</option>
                 {customers.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}

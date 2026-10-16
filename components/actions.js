@@ -47,7 +47,7 @@ export function CloseCycle({ id }) {
       </button>
       {open ? (
         <Sheet title="إغلاق الدورة" onClose={() => setOpen(false)}>
-          <p className="text-base">تقفل الدورة؟ بعد الإغلاق، المتابعة والبيع الجديد هيتسجلوا على دورة جديدة.</p>
+          <p className="text-base">تقفل الدورة؟ بعد الإغلاق، المتابعة والبيع الجديد مش هيتسجلوا عليها. لو فتحت دورة جديدة، التسجيل هيروح لها.</p>
           {error ? <p className="mt-3 bg-clay-soft px-3 py-3 font-semibold text-clay" role="alert">{error}</p> : null}
           <div className="mt-4 grid grid-cols-2 gap-2">
             <button type="button" className="h-12 border border-line bg-white font-semibold" onClick={() => setOpen(false)}>لا، رجوع</button>

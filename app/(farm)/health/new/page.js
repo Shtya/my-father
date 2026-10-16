@@ -1,14 +1,18 @@
+import { CycleSelect } from "@/components/cycle-select";
 import { Field, Form, Select, Sheet } from "@/components/form";
-import { getActiveCycle } from "@/lib/farm";
+import { defaultCycleId } from "@/lib/cycle-rules";
+import { listCycleChoices } from "@/lib/farm";
 import { cairoToday } from "@/lib/format";
 
-export default async function NewHealthPage() {
-  const cycle = await getActiveCycle();
+export default async function NewHealthPage({ searchParams }) {
+  const params = await searchParams;
+  const choices = await listCycleChoices();
+  const cycleId = defaultCycleId(choices, params.cycleId);
   return (
     <Sheet title="تسجيل صحة">
-      <p className="text-sm text-muted">اكتب اللي حصل. التطبيق مش هيقولك تعالج بإيه.</p>
+      <p className="mb-3 text-sm text-muted">اكتب اللي حصل. التطبيق مش هيقولك تعالج بإيه.</p>
       <Form endpoint="/api/health" redirectTo="/health" submitLabel="حفظ" successMessage="السجل اتحفظ." label="سجل الصحة" optimistic="health">
-        <input type="hidden" name="cycleId" value={cycle?.cycle.id || ""} />
+        <CycleSelect cycles={choices} defaultValue={cycleId} allowEmpty />
         <Select label="النوع" name="recordType" defaultValue="medicine">
           <option value="medicine">دواء</option>
           <option value="vaccine">تطعيم</option>

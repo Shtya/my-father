@@ -1,5 +1,6 @@
 "use client";
 
+import { CycleSelect } from "@/components/cycle-select";
 import { Field, Form, Select, Sheet } from "@/components/form";
 import { DataTable, DeleteSheet, useRecordActions } from "@/components/data-table";
 import { useOptimisticRows } from "@/components/mutations";
@@ -12,7 +13,7 @@ const types = [
   ["note", "ملاحظة"],
 ];
 
-export function HealthBoard({ rows: serverRows, cycleId, renderedAt }) {
+export function HealthBoard({ rows: serverRows, cycles = [], cycleId, renderedAt }) {
   const { rows } = useOptimisticRows("health", serverRows, renderedAt);
   const actions = useRecordActions("health", rows);
   const record = actions.sheet?.row;
@@ -47,7 +48,7 @@ export function HealthBoard({ rows: serverRows, cycleId, renderedAt }) {
             record={record}
             reopen={{ scope: "health", rowId: record?.id }}
           >
-            {!record ? <input type="hidden" name="cycleId" value={cycleId || ""} /> : null}
+            {!record ? <CycleSelect cycles={cycles} defaultValue={cycleId} allowEmpty /> : null}
             <Select label="النوع" name="recordType" defaultValue={record?.recordType || "medicine"}>
               {types.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
