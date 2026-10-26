@@ -1,17 +1,18 @@
-import { CycleSelect } from "@/components/cycle-select";
+import { ExpenseCycleFields } from "@/components/cycle-select";
 import { Field, Form, Select, Sheet } from "@/components/form";
 import { defaultCycleId } from "@/lib/cycle-rules";
-import { listCategories, listCycleChoices, listSuppliers } from "@/lib/farm";
+import { getFarm, listCategories, listCycleChoices, listSuppliers } from "@/lib/farm";
 import { cairoToday } from "@/lib/format";
 
 export default async function NewExpensePage({ searchParams }) {
   const params = await searchParams;
-  const [categories, suppliers, choices] = await Promise.all([listCategories(), listSuppliers(), listCycleChoices()]);
-  const cycleId = defaultCycleId(choices, params.cycleId);
+  const [categories, suppliers, choices, farm] = await Promise.all([listCategories(), listSuppliers(), listCycleChoices(), getFarm()]);
+  const rememberedId = farm?.default_cycle_id || "";
+  const cycleId = defaultCycleId(choices, params.cycleId, rememberedId);
   return (
     <Sheet title="إضافة مصروف">
       <Form endpoint="/api/expenses" redirectTo="/expenses" submitLabel="حفظ المصروف" successMessage="المصروف اتسجل." label="المصروف" optimistic="expense">
-        <CycleSelect cycles={choices} defaultValue={cycleId} allowEmpty />
+        <ExpenseCycleFields cycles={choices} defaultValue={cycleId} rememberedId={rememberedId} />
         <Select label="نوع المصروف" name="categoryId" required defaultValue="feed">
           {categories.map((item) => <option key={item.id} value={item.id}>{item.name_ar}</option>)}
         </Select>

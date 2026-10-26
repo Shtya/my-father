@@ -1,33 +1,49 @@
 "use client";
 
-import { CycleSelect } from "@/components/cycle-select";
+import { ExpenseCycleFields } from "@/components/cycle-select";
 import { Field, Form, Select, Sheet } from "@/components/form";
 import { DataTable, DeleteSheet, useRecordActions } from "@/components/data-table";
 import { useOptimisticRows } from "@/components/mutations";
-import { cairoToday } from "@/lib/format";
+import { groupExpensesByCycle } from "@/lib/cycle-rules";
+import { cairoToday, formatMoney } from "@/lib/format";
 
-export function ExpensesBoard({ rows: serverRows, categories, suppliers, cycles, cycleId, renderedAt }) {
+export function ExpensesBoard({ rows: serverRows, categories, suppliers, cycles, cycleId, rememberedId, renderedAt }) {
   const { rows } = useOptimisticRows("expenses", serverRows, renderedAt);
   const actions = useRecordActions("expenses", rows);
   const record = actions.sheet?.row;
+  const groups = groupExpensesByCycle(rows, cycles, rememberedId);
+  const formCycleId = record?.cycleId || actions.sheet?.cycleId || cycleId;
 
   return (
-    <>
-      <DataTable
-        columns={["النوع", "المبلغ", "التاريخ", "المورد"]}
-        empty="لسه ما فيش مصاريف. دوس «إضافة مصروف» تحت عشان تسجّل أول مصروف."
-        addLabel="إضافة مصروف"
-        note={rows.length >= 200 ? "ظاهر آخر 200 مصروف. للأقدم استخدم التقارير." : ""}
-        onAdd={() => actions.open({ type: "add" })}
-        rows={rows.map((row) => ({
-          id: row.id,
-          name: row.categoryName,
-          pending: row.pending,
-          cells: [row.categoryName, row.amountLabel, row.dateLabel, row.supplierName || "—"],
-          onEdit: () => actions.open({ type: "edit", row }),
-          onDelete: () => actions.open({ type: "delete", row }),
-        }))}
-      />
+    <div className="space-y-5">
+      {groups.map((group) => {
+        const total = group.rows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+        const tag = group.status === "active" ? "شغالة" : group.status === "closed" ? "قديمة" : "";
+        const title = [group.name, tag, group.preferred ? "افتراضية" : ""].filter(Boolean).join(" — ");
+        return (
+          <section key={group.id || "none"}>
+            <div className="mb-1.5 flex items-baseline justify-between gap-3">
+              <h2 className="text-base font-bold">{title}</h2>
+              <p className="num text-base font-bold">{formatMoney(total)}</p>
+            </div>
+            <DataTable
+              columns={["النوع", "المبلغ", "التاريخ", "المورد"]}
+              empty={group.id ? "ما فيش مصاريف على الدورة دي." : "ما فيش مصاريف من غير دورة."}
+              addLabel="إضافة مصروف"
+              onAdd={() => actions.open({ type: "add", cycleId: group.id })}
+              rows={group.rows.map((row) => ({
+                id: row.id,
+                name: row.categoryName,
+                pending: row.pending,
+                cells: [row.categoryName, row.amountLabel, row.dateLabel, row.supplierName || "—"],
+                onEdit: () => actions.open({ type: "edit", row }),
+                onDelete: () => actions.open({ type: "delete", row }),
+              }))}
+            />
+          </section>
+        );
+      })}
+      {rows.length >= 200 ? <p className="text-sm text-muted">ظاهر آخر 200 مصروف. للأقدم استخدم التقارير.</p> : null}
       {actions.sheet?.type === "add" || actions.sheet?.type === "edit" ? (
         <Sheet title={record ? "تعديل مصروف" : "إضافة مصروف"} onClose={actions.close}>
           <ExpenseForm
@@ -35,7 +51,8 @@ export function ExpensesBoard({ rows: serverRows, categories, suppliers, cycles,
             categories={categories}
             suppliers={suppliers}
             cycles={cycles}
-            cycleId={cycleId}
+            cycleId={formCycleId}
+            rememberedId={rememberedId}
             onDone={actions.close}
           />
         </Sheet>
@@ -48,11 +65,11 @@ export function ExpensesBoard({ rows: serverRows, categories, suppliers, cycles,
           onConfirm={() => actions.remove(`/api/expenses/${record.id}`, { message: "المصروف اتحذف.", label: "المصروف", id: record.id, delta: record.amount })}
         />
       ) : null}
-    </>
+    </div>
   );
 }
 
-function ExpenseForm({ row, categories, suppliers, cycles = [], cycleId, onDone }) {
+function ExpenseForm({ row, categories, suppliers, cycles = [], cycleId, rememberedId, onDone }) {
   return (
     <Form
       endpoint={row ? `/api/expenses/${row.id}` : "/api/expenses"}
@@ -63,14 +80,14 @@ function ExpenseForm({ row, categories, suppliers, cycles = [], cycleId, onDone 
       label="المصروف"
       optimistic="expense"
       record={row}
-      reopen={{ scope: "expenses", rowId: row?.id }}
+      reopen={{ scope: "expenses", rowId: row?.id, cycleId }}
     >
       <Select label="نوع المصروف" name="categoryId" required defaultValue={row?.categoryId || "feed"}>
         {categories.map((item) => <option key={item.id} value={item.id}>{item.name_ar}</option>)}
       </Select>
       <Field label="المبلغ" name="amount" type="number" step="0.01" min="0" required defaultValue={row?.amount ?? ""} />
       <Field label="التاريخ" name="expenseDate" type="date" required defaultValue={row?.expenseDate || cairoToday()} />
-      {!row ? <CycleSelect cycles={cycles} defaultValue={cycleId} allowEmpty /> : null}
+      <ExpenseCycleFields cycles={cycles} defaultValue={cycleId} rememberedId={rememberedId} />
       <Select label="طريقة الدفع" name="paymentMethod" defaultValue={row?.paymentMethod || "cash"}>
         <option value="cash">كاش</option>
         <option value="partial">جزء كاش والباقي آجل</option>

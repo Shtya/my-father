@@ -6,52 +6,63 @@ import { currentPath, registerOwner, submit, useOperations, useOptimisticRows, u
 import { Line } from "@/components/ui";
 import { formatMoney } from "@/lib/format";
 
-export function CloseCycle({ id }) {
+export function CycleStatusToggle({ id, active }) {
   const owner = useId();
-  const key = `POST /api/cycles/${id}/close`;
-  const scope = `close:${id}`;
-  const [open, setOpen] = useState(false);
-  const op = useOperations().find((item) => item.key === key) || null;
+  const [confirm, setConfirm] = useState(false);
+  const op = useOperations().find((item) => item.url === `/api/cycles/${id}/close` || item.url === `/api/cycles/${id}/open`) || null;
   const pending = op?.status === "pending";
   const error = op?.status === "error" ? op.error : "";
 
-  useEffect(() => (open ? registerOwner(owner) : undefined), [open, owner]);
-  useReopen(scope, useCallback(() => setOpen(true), []));
+  useEffect(() => (confirm ? registerOwner(owner) : undefined), [confirm, owner]);
+  useReopen(`close:${id}`, useCallback(() => setConfirm(true), []));
 
-  function closeCycle() {
+  function send(nextActive) {
     if (pending) return;
+    const next = nextActive ? "open" : "close";
     submit({
-      key,
-      formKey: key,
+      key: `POST /api/cycles/${id}/${next}`,
+      formKey: `POST /api/cycles/${id}/${next}`,
       owner,
-      url: `/api/cycles/${id}/close`,
+      url: `/api/cycles/${id}/${next}`,
       method: "POST",
       page: currentPath(),
-      successMessage: "الدورة اتقفلت.",
-      label: "إغلاق الدورة",
-      reopen: { scope },
+      successMessage: nextActive ? "الدورة اتفحت." : "الدورة اتقفلت.",
+      label: nextActive ? "فتح الدورة" : "إغلاق الدورة",
+      reopen: nextActive ? null : { scope: `close:${id}` },
     });
-    setOpen(false);
+    setConfirm(false);
   }
 
   return (
     <div>
-      <button
-        type="button"
-        disabled={pending}
-        aria-busy={pending}
-        className="h-12 w-full border border-line bg-paper px-4 text-base font-semibold disabled:opacity-60"
-        onClick={() => setOpen(true)}
-      >
-        {pending ? "الدورة بتتقفل..." : "إغلاق الدورة"}
-      </button>
-      {open ? (
-        <Sheet title="إغلاق الدورة" onClose={() => setOpen(false)}>
-          <p className="text-base">تقفل الدورة؟ بعد الإغلاق، المتابعة والبيع الجديد مش هيتسجلوا عليها. لو فتحت دورة جديدة، التسجيل هيروح لها.</p>
+      <label className="flex min-h-12 items-center justify-between gap-3 border border-line bg-paper px-3">
+        <span>
+          <span className="block text-base font-semibold">{active ? "الدورة شغالة" : "الدورة مقفولة"}</span>
+          <span className="block text-sm text-muted">{pending ? "بيتحفظ..." : active ? "اقفلها لو خلصت" : "افتحها لو لسه شغالة"}</span>
+        </span>
+        <input
+          className="h-6 w-6 accent-[var(--green)]"
+          type="checkbox"
+          role="switch"
+          aria-checked={active}
+          aria-label={active ? "قفل الدورة" : "فتح الدورة"}
+          checked={active}
+          disabled={pending}
+          onChange={() => {
+            if (pending) return;
+            if (active) setConfirm(true);
+            else send(true);
+          }}
+        />
+      </label>
+      {error && !confirm ? <p className="mt-2 bg-clay-soft px-3 py-3 font-semibold text-clay" role="alert">{error}</p> : null}
+      {confirm ? (
+        <Sheet title="إغلاق الدورة" onClose={() => setConfirm(false)}>
+          <p className="text-base">تقفل الدورة؟ تقدر تفتحها تاني من نفس المكان. التسجيل على الدورة دي يفضل متاح لو اخترتها من القائمة.</p>
           {error ? <p className="mt-3 bg-clay-soft px-3 py-3 font-semibold text-clay" role="alert">{error}</p> : null}
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <button type="button" className="h-12 border border-line bg-white font-semibold" onClick={() => setOpen(false)}>لا، رجوع</button>
-            <button type="button" disabled={pending} aria-busy={pending} className="h-12 bg-green font-semibold disabled:opacity-60" onClick={closeCycle}>
+            <button type="button" className="h-12 border border-line bg-white font-semibold" onClick={() => setConfirm(false)}>لا، رجوع</button>
+            <button type="button" disabled={pending} aria-busy={pending} className="h-12 bg-green font-semibold disabled:opacity-60" onClick={() => send(false)}>
               {pending ? "بيتقفل..." : error && op?.retryable ? "حاول تاني" : "أيوه، اقفلها"}
             </button>
           </div>
@@ -72,7 +83,6 @@ export function EditCycle({ cycle }) {
       </button>
       {open ? (
         <Sheet title="تعديل بيانات الدورة" onClose={() => setOpen(false)}>
-          <p className="mb-3 text-sm text-muted">عدد الكتاكيت وتاريخ البداية ما بيتعدلوش هنا عشان الحسابات ما تتلخبطش.</p>
           <Form
             endpoint={`/api/cycles/${cycle.id}`}
             method="PATCH"
@@ -83,6 +93,7 @@ export function EditCycle({ cycle }) {
             reopen={{ scope }}
           >
             <Field label="اسم الدورة" name="name" required defaultValue={cycle.name} />
+            <Field label="عمر الكتكوت (يوم)" name="ageDays" type="number" min="0" max="500" step="1" required defaultValue={cycle.ageDays ?? 0} hint="لما تغيّر العمر، تاريخ البداية بيتظبط لوحده." />
             <Field label="النوع" name="poultryType" defaultValue={cycle.poultry_type || ""} />
             <Field label="السلالة" name="breed" defaultValue={cycle.breed || ""} />
             <Field label="ميعاد البيع المتوقع" name="expectedSellDate" type="date" defaultValue={cycle.expected_sell_date ? String(cycle.expected_sell_date).slice(0, 10) : ""} />

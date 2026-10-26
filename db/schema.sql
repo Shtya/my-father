@@ -43,6 +43,8 @@ CREATE TABLE IF NOT EXISTS cycles (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+ALTER TABLE farms ADD COLUMN IF NOT EXISTS default_cycle_id UUID;
+
 CREATE TABLE IF NOT EXISTS expense_categories (
   id TEXT PRIMARY KEY,
   name_ar TEXT NOT NULL,

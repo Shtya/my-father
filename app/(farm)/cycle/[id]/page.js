@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CloseCycle, EditCycle } from "@/components/actions";
+import { CycleStatusToggle, EditCycle } from "@/components/actions";
 import { ButtonLink, Line, Page, Section, WeightLine } from "@/components/ui";
 import { logHref } from "@/lib/cycle-rules";
 import { decision, getCycleStats, listDailyLogs } from "@/lib/farm";
@@ -71,8 +71,9 @@ export default async function CycleDetailPage({ params }) {
         target_weight_kg: cycle.target_weight_kg,
         location: cycle.location,
         notes: cycle.notes,
+        ageDays: stats.ageDays,
       }} />
-      {active ? <CloseCycle id={id} /> : null}
+      <CycleStatusToggle id={id} active={active} />
     </Page>
   );
 }

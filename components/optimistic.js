@@ -54,6 +54,8 @@ export function expensePatches(values, form, id, record) {
     unit: values.unit || "",
     unitPrice: values.unitPrice ?? "",
     notes: values.notes || "",
+    cycleId: values.cycleId || "",
+    cycleName: values.cycleId ? selectedText(form, "cycleId") : "",
   };
   if (record) return [{ scope: "expenses", type: "update", id: record.id, changes: row, delta: amount - num(record.amount) }];
   return [{ scope: "expenses", type: "add", id, row, delta: amount }];
@@ -153,6 +155,8 @@ export function purchasePatches(values, form, id) {
       unit: selectedData(form, "itemId", "unit") || "",
       unitPrice: values.unitPrice,
       notes: "",
+      cycleId: values.cycleId || "",
+      cycleName: values.cycleId ? selectedText(form, "cycleId") : "",
     },
   });
   return patches;

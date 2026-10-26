@@ -27,6 +27,7 @@ async function dispatch(request, context, method) {
     if (root === "cycles" && id && !action && method === "GET") return json(await farm.getCycleStats(id));
     if (root === "cycles" && id && !action && method === "PATCH") return json(await farm.updateCycle(id, body));
     if (root === "cycles" && id && action === "close" && method === "POST") return json(await farm.closeCycle(id));
+    if (root === "cycles" && id && action === "open" && method === "POST") return json(await farm.openCycle(id));
     if (root === "cycles" && id && action === "stats" && method === "GET") return json(await farm.getCycleStats(id));
     if (root === "cycles" && id && action === "decision" && method === "GET") return json(await farm.decision(id, filters.days));
     if (root === "daily-logs" && method === "GET") return json(await farm.listDailyLogs(filters.cycleId));
@@ -70,6 +71,7 @@ async function dispatch(request, context, method) {
     if (root === "notifications" && !id && method === "GET") return json(await farm.listNotifications());
     if (root === "notifications" && id === "read" && method === "POST") return json(await farm.markNotificationsRead());
     if (root === "search" && method === "GET") return json(await farm.searchAll(filters.q));
+    if (root === "settings" && id === "default-cycle" && method === "PATCH") return json(await farm.setDefaultCycle(body.cycleId));
     if (root === "settings" && method === "GET") {
       const record = await farm.getFarm();
       return json({ ...record, password_hash: undefined });

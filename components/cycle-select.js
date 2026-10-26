@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Select } from "@/components/form";
+import { currentPath, submit, useOperations } from "@/components/mutations";
 import { cycleOptionLabel } from "@/lib/cycle-rules";
 
 export function CycleSelect({
@@ -35,5 +36,55 @@ export function CycleSelect({
         </option>
       ))}
     </Select>
+  );
+}
+
+export function ExpenseCycleFields({ cycles, defaultValue, rememberedId, allowEmpty = true }) {
+  const remembered = cycles.find((item) => item.id === rememberedId);
+  return (
+    <div className="space-y-3">
+      <CycleSelect cycles={cycles} defaultValue={defaultValue} allowEmpty={allowEmpty} />
+      <label className="flex min-h-12 items-center gap-3 border border-line bg-paper px-3 text-base">
+        <input
+          className="h-6 w-6 accent-[var(--green)]"
+          type="checkbox"
+          name="rememberCycle"
+          defaultChecked={Boolean(rememberedId && rememberedId === defaultValue)}
+        />
+        خلّي الدورة دي الافتراضية للمصاريف الجاية
+      </label>
+      {remembered ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 border border-line bg-paper px-3 py-2">
+          <p className="text-sm text-muted">الافتراضية دلوقتي: {remembered.name}</p>
+          <ClearDefaultCycle />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ClearDefaultCycle() {
+  const key = "PATCH /api/settings/default-cycle";
+  const op = useOperations().find((item) => item.key === key) || null;
+  const pending = op?.status === "pending";
+
+  function clear() {
+    if (pending) return;
+    submit({
+      key,
+      formKey: key,
+      url: "/api/settings/default-cycle",
+      method: "PATCH",
+      body: { cycleId: null },
+      page: currentPath(),
+      successMessage: "الدورة الافتراضية اتشالت.",
+      label: "إلغاء الدورة الافتراضية",
+    });
+  }
+
+  return (
+    <button type="button" disabled={pending} className="h-11 px-3 text-sm font-semibold text-clay disabled:opacity-60" onClick={clear}>
+      {pending ? "بيتشال..." : "إلغاء الافتراضي"}
+    </button>
   );
 }

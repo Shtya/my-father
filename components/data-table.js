@@ -87,7 +87,7 @@ export function useRecordActions(scope, rows = []) {
   const onReopen = useCallback((op) => {
     const rowId = op.reopen?.rowId;
     if (!rowId) {
-      setSheet({ type: "add" });
+      setSheet({ type: "add", cycleId: op.reopen?.cycleId || "" });
       return true;
     }
     const row = rows.find((item) => item.id === rowId);
