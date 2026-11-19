@@ -6,6 +6,11 @@ import { DataTable, DeleteSheet, useRecordActions } from "@/components/data-tabl
 import { useOptimisticRows } from "@/components/mutations";
 import { formatMoney } from "@/lib/format";
 
+function moneyInput(value) {
+  const number = Math.round(Number(value) * 100) / 100;
+  return Number.isFinite(number) ? String(number) : "";
+}
+
 export function PeopleBoard({ kind, rows: serverRows, renderedAt }) {
   const customer = kind === "customer";
   const scope = customer ? "customers" : "suppliers";
@@ -55,6 +60,30 @@ export function PeopleBoard({ kind, rows: serverRows, renderedAt }) {
             <Field label="التليفون" name="phone" type="tel" defaultValue={record?.phone || ""} />
             {customer ? null : <Field label="بيبيع إيه" name="products" defaultValue={record?.products || ""} />}
             <Field label="ملاحظات" name="notes" defaultValue={record?.notes || ""} />
+            {customer ? null : (
+              <>
+                <Field
+                  label="الإجمالي"
+                  name="totalAmount"
+                  type="number"
+                  required={Boolean(record)}
+                  step="0.01"
+                  min="0"
+                  defaultValue={record ? moneyInput(record.total) : ""}
+                  hint="الرقم الجديد على نفس القيمة. أصغر يخصم، وأكبر يزوّد."
+                />
+                <Field
+                  label="علينا"
+                  name="owedAmount"
+                  type="number"
+                  required={Boolean(record)}
+                  step="0.01"
+                  min="0"
+                  defaultValue={record ? moneyInput(record.remaining) : ""}
+                  hint="الباقي اللي لسه علينا له."
+                />
+              </>
+            )}
           </Form>
         </Sheet>
       ) : null}

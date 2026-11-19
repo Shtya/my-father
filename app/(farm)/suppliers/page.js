@@ -23,6 +23,7 @@ export default async function SuppliersPage() {
           notes: row.notes || "",
           remaining: Number(row.remaining),
           remainingLabel: formatMoney(row.remaining),
+          total: Number(row.total_amount),
           totalLabel: formatMoney(row.total_amount),
         }))}
       />

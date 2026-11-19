@@ -84,20 +84,43 @@ export function salePatches(values, form, id, record) {
   return [{ scope: "sales", type: "add", id, row, delta: total }];
 }
 
+function accountNumbers(values) {
+  if (blank(values.totalAmount) && blank(values.owedAmount)) return null;
+  return { total: money(values.totalAmount), owed: money(values.owedAmount) };
+}
+
 function personPatches(scope) {
   return (values, form, id, record) => {
+    const account = accountNumbers(values);
     const details = {
       name: String(values.name || "").trim(),
       phone: values.phone || "",
       notes: values.notes || "",
       products: values.products || "",
     };
-    if (record) return [{ scope, type: "update", id: record.id, changes: details }];
+    if (account) {
+      details.remaining = account.owed;
+      details.total = account.total;
+      details.totalLabel = formatMoney(account.total);
+      details.remainingLabel = formatMoney(account.owed);
+    }
+    if (record) {
+      const delta = account ? account.owed - num(record.remaining) : 0;
+      return [{ scope, type: "update", id: record.id, changes: details, delta }];
+    }
     return [{
       scope,
       type: "add",
       id,
-      row: { ...details, href: `/${scope}/${id}`, remaining: 0, remainingLabel: formatMoney(0), totalLabel: formatMoney(0) },
+      delta: account?.owed || 0,
+      row: {
+        ...details,
+        href: `/${scope}/${id}`,
+        remaining: account?.owed || 0,
+        remainingLabel: formatMoney(account?.owed || 0),
+        total: account?.total || 0,
+        totalLabel: formatMoney(account?.total || 0),
+      },
     }];
   };
 }
